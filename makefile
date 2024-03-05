@@ -1,7 +1,4 @@
 
-
-
-
 paper/document.pdf: paper/document.toc paper/document.tex
 	cd paper && pdflatex -halt-on-error document.tex >> /dev/null
 
@@ -13,5 +10,3 @@ paper/document.blg: paper/document.aux paper/refs.bib
 
 paper/document.toc: paper/document.blg
 	cd paper && pdflatex -halt-on-error document.tex >> /dev/null
-
-

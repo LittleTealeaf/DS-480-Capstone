@@ -16,6 +16,35 @@
 
 \section{Introduction}
 
+
+% Board Ideas
+
+\paragraph{}
+
+Reinforcement learning is a subset of machine learning that aims to complete a goal in an environment.
+This can range from solving a maze, to playing a video game, to learning how to drive a car.
+Regardless of the environment, the goal of the reinforcement learning agent is to find a policy, or a mapping of all possible states to the actions the agent takes, that will maximize some long-term reward \cite{article_reinforcement_learning_survey}.
+An agent does this by learning the Q-Values associated with the environment, or the estimated reward for taking some action $A$ at a state $S$.
+This method alone is infeasable for more complicated environments, where accounting for every move in every possible state is nearly impossible to represent, or would take too long to train.
+Deep-Q Learning provides a solution by using a neural network to \textit{estimate} the Q-Values of each action given the current state \cite{article_human_level_control_deep_reinforcement_learning}.
+
+
+% Remaining Issues
+\paragraph{}
+Simple back propagation techniques, used to train and modify neural networks, can often run into the issue of requiring a lot of time to train \cite{article_accelerating_neural_networks_weight_extrapolations}.
+As the data sets we use get bigger and more complex, the longer it takes for models to train and accurately model the patterns presented.
+Deep-Q learning models are no different.
+Additionally, some environments may have many states with no reward and few states with positive or negative reward.
+This means that agents must take more steps before finding a positive or negative reward, and can lead agents to mindlessly exploring before finding any reward \cite{article_approx_optimal_approximate_reinforcement_learning}.
+
+% Project Details
+
+\paragraph{}
+This paper explores a potential training improvement for deep reinforcement learning models in environments with large state space but a known goal.
+This includes environments such as mazes, which will be the sample environment used in this paper.
+The premise of the improvement is to curate the states that the agent learns from, first showing the agent the goal, and then slowly walking it backwards so it remembers how to get back to the goal.
+
+
 \section{Methods}
 
 \subsection{Environment}

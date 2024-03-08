@@ -40,23 +40,37 @@ This means that agents must take more steps before finding a positive or negativ
 % Project Details
 
 \paragraph{}
-This paper explores a potential training improvement for deep reinforcement learning models in environments with large state space but a known goal.
-This includes environments such as mazes, which will be the sample environment used in this paper.
-The premise of the improvement is to curate the states that the agent learns from, first showing the agent the goal, and then slowly walking it backwards so it remembers how to get back to the goal.
+This paper explores a potential training improvement for deep reinforcement learning models in environments with large state space and a known goal.
+The idea is that an agent learning to back-track its own steps is faster than exploring the whole environment.
+First, the agent will be given a smaller state-space closer to the end-goal, and then expanded over time to allow the agent to learn the entire maze.
+The agent will be trained alongsize control agent to compare the ability each agent has to solve the maze over their training time.
+The data collected will be able to suggest whether this training strategy improves the training rate of the model.
 
 
 \section{Methods}
 
 \subsection{Environment}
 
+\paragraph{} 
+The environment that the agents explore is a simple maze.
+The maze consists of a 2-dimensional array of empty spaces and walls.
+The environment output given to the agent contains both the maze and the agent's position.
+The maze is encoded in $0$s and $1$s, representing empty spaces and walls respectively.
+This is given for every tile on the map.
+The agent's position will be given by its X and Y coordinates, encoded into a binary format.
+% Alternatively this may be encoded as 00100 00010 etc.
+The agent is placed at a random point in the maze, and its goal is to reach the top left corner $(0,0)$
+
 \subsection{Reinforcement Learning Model}
+
+\paragraph{}
+The agent will be implemented and trained based on a simple Deep-Q machine learning model \cite{article_reinforcement_learning_survey}.
 
 \subsection{Agent Specifications}
 
 \subsection{Data Collection and Analysis}
 
 \paragraph{}
-For data analysis we will use R \cite{lang_r} and ggplot2 \cite{lib_ggplot2}.
 
 \section{Discussion}
 

@@ -69,6 +69,12 @@ class Maze:
         dy = abs(self.y - self.height + 1)
         return 1 / (dx + dy)
 
+    def get_valid_positions(self):
+        return [
+            [(x, y) for y in range(self.height) if self.maze[y][x] != 1]
+            for x in range(self.width)
+        ]
+
 
 INPUT_SIZE = len(Maze().observations())
 OUTPUT_SIZE = 4  # Up, Down, Left, Right

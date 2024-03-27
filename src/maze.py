@@ -2,17 +2,6 @@ from mazelib import Maze
 from mazelib.generate.Prims import Prims
 
 
-def get_move_name(move: int):
-    if move == 0:
-        return "Up"
-    elif move == 1:
-        return "Down"
-    elif move == 2:
-        return "Right"
-    elif move == 3:
-        return "Left"
-
-
 class Environment:
     UP = 0
     DOWN = 1

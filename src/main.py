@@ -1,6 +1,6 @@
 from agents import Agent, ExpAgent
 
-agent = Agent([10,10,10])
+agent = Agent([500, 500, 500, 500])
 
 for i in range(100):
     print("iter ", i)

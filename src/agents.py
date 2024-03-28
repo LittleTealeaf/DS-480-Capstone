@@ -4,6 +4,7 @@ from random import Random
 from keras.activations import sigmoid
 from keras.optimizers import SGD
 
+
 @tf.function
 def feed_forward(inputs, layers):
     variables = inputs
@@ -157,12 +158,23 @@ class Agent:
         for _ in range(k):
             env = self.create_environment()
             positions = env.get_valid_positions()
-            mapping = {}
+            observations = []
             for x, y in positions:
                 env.set_position(x, y)
-                obs = env.get_observations()
-                obs_tf = tf.constant(obs, dtype=tf.float32, shape=(1, obs.size))
-                mapping[str((x, y))] = int(feed_forward_argmax(obs_tf, self.network))
+                observations.append(env.get_observations())
+
+            observations_tf = tf.constant(
+                observations,
+                shape=(len(positions), env.get_obs_length()),
+                dtype=tf.float32,
+            )
+
+            choices = feed_forward_argmax(observations_tf, self.network)
+
+            mapping = {}
+
+            for i in range(len(positions)):
+                mapping[str(i)] = choices[i]
 
             stack = [(env.goal_x, env.goal_y)]
             count = 0

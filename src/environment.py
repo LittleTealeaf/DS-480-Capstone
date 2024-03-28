@@ -74,3 +74,12 @@ class Environment:
         ):
             self.x = nx
             self.y = ny
+    
+    def is_solved(self) -> bool:
+        return self.x == self.goal_x and self.y == self.goal_y
+
+    def get_reward(self):
+        dx = abs(self.x - self.goal_x)
+        dy = abs(self.y - self.goal_y)
+        return 1 / (dx + dy)
+

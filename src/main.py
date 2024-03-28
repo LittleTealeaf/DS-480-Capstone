@@ -1,6 +1,8 @@
 from agents import Agent, ExpAgent
 
-agent = Agent([100, 100, 100])
+agent = Agent([500, 500, 500])
 
-agent.populate_replay(10)
-agent.train(10)
+for i in range(100):
+    print("iter ", i)
+    agent.populate_replay(1000)
+    agent.train(500)

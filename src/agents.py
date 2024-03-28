@@ -4,7 +4,6 @@ from random import Random
 from keras.activations import sigmoid
 from keras.optimizers import SGD
 
-
 @tf.function
 def feed_forward(inputs, layers):
     variables = inputs
@@ -46,13 +45,15 @@ def train(state_1, choices, rewards, state_2, network, target, gamma, optimizer)
 
 
 class Agent:
-    def __init__(self, layer_sizes: list[int], max_replay=10_000, height=10, width=10):
+    def __init__(
+        self, layer_sizes: list[int], max_replay=10_000, height=10, width=10, seed=None
+    ):
         layer_sizes.append(4)
         self.network = []
         self.target = []
         self.replay = []
         self.iter = 0
-        self.random = Random()
+        self.random = Random(seed)
         self.max_replay = max_replay
         self.height = 10
         self.width = 10
@@ -82,8 +83,15 @@ class Agent:
     def epsilon(self):
         return 0.2
 
+    def new_environment(self) -> Environment:
+        return Environment(
+            self.height,
+            self.width,
+            seed=self.random.randint(0, 2**23 - 1),
+        )
+
     def create_environment(self) -> Environment:
-        return Environment(self.height, self.width)
+        return self.new_environment()
 
     def populate_replay(self, count: int):
         env = self.create_environment()
@@ -102,10 +110,11 @@ class Agent:
 
             reward = env.get_reward()
 
-            l = len(self.replay)
-            while l >= self.max_replay:
-                self.replay.remove(self.random.randint(0, l))
-            self.replay.append((obs, sel, obs_2, reward))
+            if len(self.replay) > self.max_replay:
+                index = self.random.randint(0, self.max_replay)
+                self.replay[index] = (obs, sel, obs_2, reward)
+            else:
+                self.replay.append((obs, sel, obs_2, reward))
 
     def train(self, count: int):
         self.iter += 1
@@ -143,7 +152,64 @@ class Agent:
             self.optimizer,
         )
 
+    def evaluate(self, k: int = 1):
+        total = 0.0
+        for _ in range(k):
+            env = self.create_environment()
+            positions = env.get_valid_positions()
+            mapping = {}
+            for x, y in positions:
+                env.set_position(x, y)
+                obs = env.get_observations()
+                obs_tf = tf.constant(obs, dtype=tf.float32, shape=(1, obs.size))
+                mapping[str((x, y))] = int(feed_forward_argmax(obs_tf, self.network))
+
+            stack = [(env.goal_x, env.goal_y)]
+            count = 0
+
+            def is_position(pos):
+                x, y = pos
+                return x >= 0 and x < env.width and y >= 0 and y < env.height
+
+            while len(stack) > 0:
+                x, y = stack.pop()
+                count += 1
+
+                UP = (x, y + 1)
+                if (
+                    is_position(UP)
+                    and str(UP) in mapping
+                    and mapping[str(UP)] == Environment.UP
+                ):
+                    stack.append(UP)
+
+                DOWN = (x, y - 1)
+                if (
+                    is_position(DOWN)
+                    and str(DOWN) in mapping
+                    and mapping[str(DOWN)] == Environment.DOWN
+                ):
+                    stack.append(DOWN)
+
+                RIGHT = (x - 1, y)
+                if (
+                    is_position(RIGHT)
+                    and str(RIGHT) in mapping
+                    and mapping[str(RIGHT)] == Environment.RIGHT
+                ):
+                    stack.append(RIGHT)
+
+                LEFT = (x + 1, y)
+                if (
+                    is_position(LEFT)
+                    and str(LEFT) in mapping
+                    and mapping[str(LEFT)] == Environment.LEFT
+                ):
+                    stack.append(LEFT)
+            total += count / len(mapping)
+        return total / k
+
 
 class ExpAgent(Agent):
     def create_environment(self) -> Environment:
-        return Environment(self.height, self.width)
+        return self.new_environment()

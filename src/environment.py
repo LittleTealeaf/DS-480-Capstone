@@ -37,7 +37,6 @@ class Environment:
         return int(self.get_observations().size)
 
     def set_position(self, x, y) -> bool:
-        assert self.maze.grid != None
         if self.maze.grid[y][x] == 0:
             self.x, self.y = x, y
             return True

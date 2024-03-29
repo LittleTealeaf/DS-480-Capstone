@@ -60,19 +60,35 @@ class Agent:
         target_update_frequency=100,
         updates_per_step=1,
     ):
+        self.layer_sizes = [i for i in layer_sizes]
+        "Layer Sizes used for input"
         layer_sizes.append(4)
         self.network = []
+        "Neural Network Layers"
         self.target = []
+        "Target Neural Network Layers"
         self.replay = []
+        "Replay Database"
         self.iter = 0
+        "Current Iteration"
+        self.seed = seed
+        "Initialization Seed"
         self.updates_per_step = updates_per_step
+        "Number of target updates between steps. Only used for ExpAgent"
         self.random = Random(seed)
+        "Random Object"
         self.max_replay = max_replay
+        "Maximum Replay Length"
         self.height = height
+        "Maze Environment height"
         self.width = width
+        "Maze Environment Width"
         self.obs_size = Environment(height, width).get_obs_length()
+        "Observation Size"
         self.optimizer = None
+        "Optimizer"
         self.target_update_frequency = target_update_frequency
+        "Target Update Frequency"
 
         prev = self.obs_size
         for layer in layer_sizes:
@@ -83,21 +99,25 @@ class Agent:
         self.update_target()
 
     def update_target(self):
+        "Updates the target with values from the network"
         self.target = [
             (tf.stop_gradient(weights), tf.stop_gradient(bias))
             for weights, bias in self.network
         ]
 
     def learning_rate(self):
+        "Calculates the learning rate to use"
         return 0.1 * (
             0.8 ** (self.iter // self.target_update_frequency)
             * 0.9 ** (self.iter % self.target_update_frequency)
         )
 
     def gamma(self):
+        "Calculates the gamma value to use"
         return 0.9
 
     def epsilon(self):
+        "Calculates the epsilon value to use"
         return (
             0.5
             * (0.9 ** (self.iter // self.target_update_frequency))
@@ -106,6 +126,7 @@ class Agent:
         )
 
     def new_environment(self) -> Environment:
+        "Generates a new environment using self.random to generate the seed"
         return Environment(
             self.height,
             self.width,
@@ -113,9 +134,11 @@ class Agent:
         )
 
     def create_environment(self) -> Environment:
+        "Creates a new environment to use in training based on this model's training strategy"
         return self.new_environment()
 
     def populate_replay(self, count: int):
+        "Explores new instances of environments to populate the replay database"
         env = self.create_environment()
         for _ in range(count):
             while env.is_solved():
@@ -139,6 +162,7 @@ class Agent:
                 self.replay.append((obs, sel, obs_2, reward))
 
     def train(self, count: int):
+        "Trains on a given number of observations in the replay database"
         self.iter += 1
 
         values = self.random.choices(self.replay, k=count)
@@ -178,6 +202,7 @@ class Agent:
             self.update_target()
 
     def evaluate(self, k: int = 1):
+        "Evaluates the model over a number of randomly generated environments"
         envs = [self.create_environment() for _ in range(k)]
 
         len_obs = envs[0].get_obs_length()
@@ -265,6 +290,17 @@ class Agent:
             if has_invalid_numbers(w) or has_invalid_numbers(b):
                 return True
         return False
+
+    def as_exp_agent(self):
+        return ExpAgent(
+            self.layer_sizes,
+            self.max_replay,
+            self.height,
+            self.width,
+            self.seed,
+            self.target_update_frequency,
+            self.updates_per_step,
+        )
 
 
 class ExpAgent(Agent):

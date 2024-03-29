@@ -23,6 +23,7 @@ for i in range(20):
         break
 
 with open("data.csv", "w") as file:
+    file.write("evaluation,up,down,right,left\n")
     file.writelines(
-        [f"{ev},{freq[0]},{freq[1]},{freq[2]},{freq[3]}" for ev, freq in data]
+        [f"{ev},{freq[0]},{freq[1]},{freq[2]},{freq[3]}\n" for ev, freq in data]
     )

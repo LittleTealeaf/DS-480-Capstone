@@ -3,14 +3,14 @@ import time
 
 
 agent = Agent(
-    [1000, 1000, 1000],
+    [500,500,500],
     width=5,
     height=5,
     target_update_frequency=100,
     updates_per_step=1,
 )
 
-ITERATIONS = 10_000
+ITERATIONS = 1_000
 
 data = []
 elapsed_time = 0
@@ -40,7 +40,6 @@ for model in ["control", "experimental"]:
         minutes = (estimated_left % 3600) // 60
         seconds = estimated_left % 60
 
-        # print("Iter ", i, " ", ev, " ", freq, "\t", f"Est Left: {hours}h {minutes}m {seconds}s")
         print(
             "Iter {}, ({:.9f}) [{:.2f},{:.2f},{:.2f},{:.2f}] Est. Left: {}h {}m {:.2f}s".format(
                 i, ev, freq[0], freq[1], freq[2], freq[3], hours, minutes, seconds

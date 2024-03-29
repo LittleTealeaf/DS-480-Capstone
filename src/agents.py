@@ -62,8 +62,8 @@ class Agent:
         self.iter = 0
         self.random = Random(seed)
         self.max_replay = max_replay
-        self.height = 10
-        self.width = 10
+        self.height = height
+        self.width = width
         self.obs_size = Environment(height, width).get_obs_length()
         self.optimizer = None
         self.target_update_frequency = target_update_frequency

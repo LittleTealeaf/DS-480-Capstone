@@ -178,74 +178,84 @@ class Agent:
             self.update_target()
 
     def evaluate(self, k: int = 1):
-        total = 0.0
-        distribution = [0, 0, 0, 0]
-        for _ in range(k):
-            env = self.create_environment()
-            positions = env.get_valid_positions()
-            observations = []
-            for x, y in positions:
+        envs = [self.create_environment() for _ in range(k)]
+
+        len_obs = envs[0].get_obs_length()
+
+        positions = []
+        observations = []
+
+        for env in envs:
+            pos = env.get_valid_positions()
+            positions.append(pos)
+            for x, y in pos:
                 env.set_position(x, y)
                 observations.append(env.get_observations())
 
-            observations_tf = tf.constant(
-                observations,
-                shape=(len(positions), env.get_obs_length()),
-                dtype=tf.float32,
-            )
+        observations_tf = tf.constant(
+            observations, shape=(len(observations), len_obs), dtype=tf.float32
+        )
 
-            choices = feed_forward_argmax(observations_tf, self.network)
+        choices = feed_forward_argmax(observations_tf, self.network)
+        choices = [i.numpy() for i in choices]
 
-            mapping = {}
+        frequency = [0, 0, 0, 0]
 
-            for i in range(len(positions)):
-                mapping[str(i)] = choices[i]
-                distribution[choices[i]] += 1
+        count = 0
+
+        index = 0
+        for i, env in enumerate(envs):
+            pos = positions[i]
+            len_pos = len(pos)
+            cho = choices[index : (index + len_pos)]
+            index += len_pos
+
+            m = {}
+            for i in range(len_pos):
+                m[str(pos[i])] = cho[i]
+                frequency[cho[i]] += 1
 
             stack = [(env.goal_x, env.goal_y)]
-            count = 0
 
             def is_position(pos):
                 x, y = pos
                 return x >= 0 and x < env.width and y >= 0 and y < env.height
 
+            len_m = len(m)
+
             while len(stack) > 0:
                 x, y = stack.pop()
-                count += 1
+                count += 1 / (len_m * k)
 
                 UP = (x, y + 1)
-                if (
-                    is_position(UP)
-                    and str(UP) in mapping
-                    and mapping[str(UP)] == Environment.UP
-                ):
+                if is_position(UP) and str(UP) in m and m[str(UP)] == Environment.UP:
                     stack.append(UP)
 
                 DOWN = (x, y - 1)
                 if (
                     is_position(DOWN)
-                    and str(DOWN) in mapping
-                    and mapping[str(DOWN)] == Environment.DOWN
+                    and str(DOWN) in m
+                    and m[str(DOWN)] == Environment.DOWN
                 ):
                     stack.append(DOWN)
 
                 RIGHT = (x - 1, y)
                 if (
                     is_position(RIGHT)
-                    and str(RIGHT) in mapping
-                    and mapping[str(RIGHT)] == Environment.RIGHT
+                    and str(RIGHT) in m
+                    and m[str(RIGHT)] == Environment.RIGHT
                 ):
                     stack.append(RIGHT)
 
                 LEFT = (x + 1, y)
                 if (
                     is_position(LEFT)
-                    and str(LEFT) in mapping
-                    and mapping[str(LEFT)] == Environment.LEFT
+                    and str(LEFT) in m
+                    and m[str(LEFT)] == Environment.LEFT
                 ):
                     stack.append(LEFT)
-            total += count / len(mapping)
-        return total / k, [i / k for i in distribution]
+
+        return count, [i / k for i in frequency]
 
     def nan_check(self):
         for w, b in self.network:
@@ -264,7 +274,9 @@ class ExpAgent(Agent):
         x, y = env.maze.start
         env.set_position(x, y)
 
-        for _ in range((self.iter // self.target_update_frequency * self.updates_per_step) + 1):
+        for _ in range(
+            (self.iter // self.target_update_frequency * self.updates_per_step) + 1
+        ):
             env.move(self.random.randint(0, 3))
 
         return env

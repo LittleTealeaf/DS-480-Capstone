@@ -1,5 +1,6 @@
 from agents import Agent, ExpAgent
 
+
 agent = ExpAgent(
     [1000, 1000, 1000, 1000],
     width=4,

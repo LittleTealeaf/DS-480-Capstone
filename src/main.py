@@ -42,7 +42,7 @@ for model in ["control", "experimental"]:
 
         # print("Iter ", i, " ", ev, " ", freq, "\t", f"Est Left: {hours}h {minutes}m {seconds}s")
         print(
-            "Iter {}, ({:.9}) [{:.2f},{:.2f},{:.2f},{:.2f}] Est. Left: {}h {}m {:.2f}s".format(
+            "Iter {}, ({:.9f}) [{:.2f},{:.2f},{:.2f},{:.2f}] Est. Left: {}h {}m {:.2f}s".format(
                 i, ev, freq[0], freq[1], freq[2], freq[3], hours, minutes, seconds
             )
         )

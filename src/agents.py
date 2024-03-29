@@ -15,7 +15,7 @@ def feed_forward(inputs, layers):
     for weights, biases in layers:
         variables = variables @ weights
         variables = variables + biases
-        variables = relu(variables)
+        variables = sigmoid(variables)
     return variables
 
 

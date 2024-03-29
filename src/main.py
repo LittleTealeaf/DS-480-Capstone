@@ -10,8 +10,8 @@ agent = ExpAgent(
 
 for i in range(10_000):
     agent.populate_replay(100)
-    agent.train(500)
-    print("Iter ", i, " ", agent.evaluate(10))
+    agent.train(10)
+    print("Iter ", i, " ", agent.evaluate(100))
 
     if agent.nan_check():
         print("HIT NAN")

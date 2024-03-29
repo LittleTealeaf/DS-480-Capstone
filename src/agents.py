@@ -58,12 +58,14 @@ class Agent:
         width=10,
         seed=None,
         target_update_frequency=100,
+        updates_per_step=1,
     ):
         layer_sizes.append(4)
         self.network = []
         self.target = []
         self.replay = []
         self.iter = 0
+        self.updates_per_step = updates_per_step
         self.random = Random(seed)
         self.max_replay = max_replay
         self.height = height
@@ -262,7 +264,7 @@ class ExpAgent(Agent):
         x, y = env.maze.start
         env.set_position(x, y)
 
-        for _ in range((self.iter // (self.target_update_frequency * 2)) + 1):
+        for _ in range((self.iter // self.target_update_frequency * self.updates_per_step) + 1):
             env.move(self.random.randint(0, 3))
 
         return env

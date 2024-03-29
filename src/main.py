@@ -1,6 +1,12 @@
 from agents import Agent, ExpAgent
 
-agent = ExpAgent([2000, 2000, 2000], width=10, height=10, target_update_frequency=100)
+agent = ExpAgent(
+    [1000, 1000, 1000, 1000],
+    width=4,
+    height=4,
+    target_update_frequency=25,
+    updates_per_step=4,
+)
 
 for i in range(10_000):
     agent.populate_replay(100)

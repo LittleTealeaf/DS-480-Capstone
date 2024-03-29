@@ -1,7 +1,7 @@
 from environment import Environment
 import tensorflow as tf
 from random import Random
-from keras.activations import sigmoid
+from keras.activations import sigmoid, relu
 from keras.optimizers import SGD
 
 
@@ -11,7 +11,7 @@ def feed_forward(inputs, layers):
     for weights, biases in layers:
         variables = variables @ weights
         variables = variables + biases
-        variables = sigmoid(variables)
+        variables = relu(variables)
     return variables
 
 

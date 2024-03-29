@@ -11,7 +11,7 @@ agent = ExpAgent(
 
 data = []
 
-for i in range(10_000):
+for i in range(100):
     agent.populate_replay(100)
     agent.train(100)
     evals, freq = agent.evaluate(10)

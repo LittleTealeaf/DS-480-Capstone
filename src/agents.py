@@ -5,6 +5,10 @@ from keras.activations import sigmoid, relu
 from keras.optimizers import SGD
 
 
+def has_invalid_numbers(tensor):
+    return tf.reduce_any(tf.logical_or(tf.math.is_inf(tensor), tf.math.is_nan(tensor)))
+
+
 @tf.function
 def feed_forward(inputs, layers):
     variables = inputs
@@ -240,6 +244,15 @@ class Agent:
                     stack.append(LEFT)
             total += count / len(mapping)
         return total / k, [i / k for i in distribution]
+
+    def nan_check(self):
+        for w, b in self.network:
+            if has_invalid_numbers(w) or has_invalid_numbers(b):
+                return True
+        for w, b in self.target:
+            if has_invalid_numbers(w) or has_invalid_numbers(b):
+                return True
+        return False
 
 
 class ExpAgent(Agent):

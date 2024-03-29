@@ -89,10 +89,15 @@ class Agent:
         )
 
     def gamma(self):
-        return 0.5
+        return 0.9
 
     def epsilon(self):
-        return 0.2
+        return (
+            0.5
+            * (0.9 ** (self.iter // self.target_update_frequency))
+            * (0.9 ** (self.iter % self.target_update_frequency))
+            + 0.3
+        )
 
     def new_environment(self) -> Environment:
         return Environment(

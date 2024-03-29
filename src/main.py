@@ -14,15 +14,15 @@ data = []
 for i in range(100):
     agent.populate_replay(100)
     agent.train(100)
-    evals, freq = agent.evaluate(10)
-    data.append(evals)
-    print("Iter ", i, " ", evals, " ", freq)
+    evaluation = agent.evaluate(10)
+    data.append(evaluation)
+    print("Iter ", i, " ", evaluation)
 
     if agent.nan_check():
         print("HIT NAN")
         break
 
-from matplotlib import pyplot as plt
-
-plt.plot(data)
-plt.show()
+with open("data.csv", "w") as file:
+    file.writelines(
+        [f"{ev},{freq[0]},{freq[1]},{freq[2]},{freq[3]}" for ev, freq in data]
+    )

@@ -59,6 +59,7 @@ class Agent:
         seed=None,
         target_update_frequency=100,
         updates_per_step=1,
+        optimizer = None,
     ):
         self.layer_sizes = [i for i in layer_sizes]
         "Layer Sizes used for input"
@@ -85,7 +86,7 @@ class Agent:
         "Maze Environment Width"
         self.obs_size = Environment(height, width).get_obs_length()
         "Observation Size"
-        self.optimizer = None
+        self.optimizer = optimizer
         "Optimizer"
         self.target_update_frequency = target_update_frequency
         "Target Update Frequency"
@@ -300,6 +301,7 @@ class Agent:
             self.seed,
             self.target_update_frequency,
             self.updates_per_step,
+            self.optimizer
         )
 
 

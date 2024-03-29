@@ -262,8 +262,7 @@ class ExpAgent(Agent):
         x, y = env.maze.start
         env.set_position(x, y)
 
-        for _ in range((self.iter // 500) + 1):
-
+        for _ in range((self.iter // (self.target_update_frequency * 2)) + 1):
             env.move(self.random.randint(0, 3))
 
         return env

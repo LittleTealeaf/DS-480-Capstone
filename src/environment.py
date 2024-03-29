@@ -80,5 +80,6 @@ class Environment:
     def get_reward(self):
         dx = abs(self.x - self.goal_x)
         dy = abs(self.y - self.goal_y)
-        return 1 / (dx + dy)
+
+        return (self.width + self.height) - (dx + dy)
 

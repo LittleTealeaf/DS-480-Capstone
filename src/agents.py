@@ -168,6 +168,7 @@ class Agent:
 
     def evaluate(self, k: int = 1):
         total = 0.0
+        distribution = [0, 0, 0, 0]
         for _ in range(k):
             env = self.create_environment()
             positions = env.get_valid_positions()
@@ -207,6 +208,7 @@ class Agent:
                     and mapping[str(UP)] == Environment.UP
                 ):
                     stack.append(UP)
+                    distribution[Environment.UP] += 1
 
                 DOWN = (x, y - 1)
                 if (
@@ -215,6 +217,7 @@ class Agent:
                     and mapping[str(DOWN)] == Environment.DOWN
                 ):
                     stack.append(DOWN)
+                    distribution[Environment.DOWN] += 1
 
                 RIGHT = (x - 1, y)
                 if (
@@ -223,6 +226,7 @@ class Agent:
                     and mapping[str(RIGHT)] == Environment.RIGHT
                 ):
                     stack.append(RIGHT)
+                    distribution[Environment.RIGHT] += 1
 
                 LEFT = (x + 1, y)
                 if (
@@ -231,8 +235,9 @@ class Agent:
                     and mapping[str(LEFT)] == Environment.LEFT
                 ):
                     stack.append(LEFT)
+                    distribution[Environment.LEFT] += 1
             total += count / len(mapping)
-        return total / k
+        return total / k, distribution
 
 
 class ExpAgent(Agent):

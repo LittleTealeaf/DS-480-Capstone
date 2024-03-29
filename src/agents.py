@@ -234,7 +234,7 @@ class Agent:
                 ):
                     stack.append(LEFT)
             total += count / len(mapping)
-        return total / k, distribution
+        return total / k, [i / k for i in distribution]
 
 
 class ExpAgent(Agent):

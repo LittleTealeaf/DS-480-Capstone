@@ -2,7 +2,7 @@ from agents import Agent, ExpAgent
 
 
 agent = ExpAgent(
-    [1000, 1000, 1000, 1000],
+    [500, 500, 500],
     width=5,
     height=5,
     target_update_frequency=25,
@@ -11,7 +11,7 @@ agent = ExpAgent(
 
 data = []
 
-for i in range(100):
+for i in range(20):
     agent.populate_replay(100)
     agent.train(100)
     evaluation = agent.evaluate(10)

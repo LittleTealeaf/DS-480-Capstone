@@ -92,6 +92,7 @@ class Agent:
         "Target Update Frequency"
 
         prev = self.obs_size
+        tf.random.set_seed(self.random.random())
         for layer in layer_sizes:
             weights = tf.Variable(tf.random.normal((prev, layer)))
             bias = tf.Variable(tf.random.normal((layer,)))

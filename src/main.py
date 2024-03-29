@@ -9,11 +9,20 @@ agent = ExpAgent(
     updates_per_step=4,
 )
 
+data = []
+
 for i in range(10_000):
     agent.populate_replay(100)
     agent.train(100)
-    print("Iter ", i, " ", agent.evaluate(10))
+    evals, freq = agent.evaluate(10)
+    data.append(evals)
+    print("Iter ", i, " ", evals, " ", freq)
 
     if agent.nan_check():
         print("HIT NAN")
         break
+
+from matplotlib import pyplot as plt
+
+plt.plot(data)
+plt.show()

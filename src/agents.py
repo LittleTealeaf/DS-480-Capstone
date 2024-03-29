@@ -189,6 +189,7 @@ class Agent:
 
             for i in range(len(positions)):
                 mapping[str(i)] = choices[i]
+                distribution[choices[i]] += 1
 
             stack = [(env.goal_x, env.goal_y)]
             count = 0
@@ -208,7 +209,6 @@ class Agent:
                     and mapping[str(UP)] == Environment.UP
                 ):
                     stack.append(UP)
-                    distribution[Environment.UP] += 1
 
                 DOWN = (x, y - 1)
                 if (
@@ -217,7 +217,6 @@ class Agent:
                     and mapping[str(DOWN)] == Environment.DOWN
                 ):
                     stack.append(DOWN)
-                    distribution[Environment.DOWN] += 1
 
                 RIGHT = (x - 1, y)
                 if (
@@ -226,7 +225,6 @@ class Agent:
                     and mapping[str(RIGHT)] == Environment.RIGHT
                 ):
                     stack.append(RIGHT)
-                    distribution[Environment.RIGHT] += 1
 
                 LEFT = (x + 1, y)
                 if (
@@ -235,7 +233,6 @@ class Agent:
                     and mapping[str(LEFT)] == Environment.LEFT
                 ):
                     stack.append(LEFT)
-                    distribution[Environment.LEFT] += 1
             total += count / len(mapping)
         return total / k, distribution
 

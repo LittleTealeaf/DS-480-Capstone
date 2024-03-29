@@ -1,11 +1,8 @@
 from agents import Agent, ExpAgent
 
-agent = Agent([500, 500, 500, 500])
+agent = ExpAgent([1000, 1000, 1000])
 
-for i in range(100):
-    print("iter ", i)
-    if i % 10 == 0:
-        agent.update_target()
+for i in range(10_000):
     agent.populate_replay(1000)
-    agent.train(500)
-    print(agent.evaluate(10))
+    agent.train(1000)
+    print(agent.evaluate(100))

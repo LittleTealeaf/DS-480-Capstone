@@ -47,7 +47,13 @@ def train(state_1, choices, rewards, state_2, network, target, gamma, optimizer)
 
 class Agent:
     def __init__(
-        self, layer_sizes: list[int], max_replay=10_000, height=10, width=10, seed=None
+        self,
+        layer_sizes: list[int],
+        max_replay=10_000,
+        height=10,
+        width=10,
+        seed=None,
+        target_update_frequency=100,
     ):
         layer_sizes.append(4)
         self.network = []
@@ -60,6 +66,7 @@ class Agent:
         self.width = 10
         self.obs_size = Environment(height, width).get_obs_length()
         self.optimizer = None
+        self.target_update_frequency = target_update_frequency
 
         prev = self.obs_size
         for layer in layer_sizes:
@@ -76,7 +83,10 @@ class Agent:
         ]
 
     def learning_rate(self):
-        return 0.1
+        return 0.1 * (
+            0.8 ** (self.iter // self.target_update_frequency)
+            * 0.9 ** (self.iter % self.target_update_frequency)
+        )
 
     def gamma(self):
         return 0.5
@@ -97,7 +107,7 @@ class Agent:
     def populate_replay(self, count: int):
         env = self.create_environment()
         for _ in range(count):
-            if env.is_solved():
+            while env.is_solved():
                 env = self.create_environment()
 
             obs = env.get_observations()
@@ -152,6 +162,9 @@ class Agent:
             self.gamma(),
             self.optimizer,
         )
+
+        if self.iter % self.target_update_frequency == 0:
+            self.update_target()
 
     def evaluate(self, k: int = 1):
         total = 0.0
@@ -223,5 +236,14 @@ class Agent:
 
 
 class ExpAgent(Agent):
+
     def create_environment(self) -> Environment:
-        return self.new_environment()
+        env = self.new_environment()
+        x, y = env.maze.start
+        env.set_position(x, y)
+
+        for _ in range((self.iter // 500) + 1):
+
+            env.move(self.random.randint(0, 3))
+
+        return env

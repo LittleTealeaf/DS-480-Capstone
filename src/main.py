@@ -3,14 +3,14 @@ import time
 
 
 agent = Agent(
-    [500,500,500],
+    [750,500,250],
     width=5,
     height=5,
     target_update_frequency=100,
     updates_per_step=1,
 )
 
-ITERATIONS = 1_000
+ITERATIONS = 10_000
 
 data = []
 elapsed_time = 0

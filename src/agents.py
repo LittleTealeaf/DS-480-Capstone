@@ -30,7 +30,6 @@ def train(state_1, choices, rewards, state_2, network, target, gamma, optimizer)
     train_variables = []
 
     with tf.GradientTape() as tape:
-
         for weights, biases in network:
             train_variables.extend([weights, biases])
 
@@ -59,7 +58,7 @@ class Agent:
         seed=None,
         target_update_frequency=100,
         updates_per_step=1,
-        optimizer = None,
+        optimizer=None,
     ):
         self.layer_sizes = [i for i in layer_sizes]
         "Layer Sizes used for input"
@@ -90,6 +89,8 @@ class Agent:
         "Optimizer"
         self.target_update_frequency = target_update_frequency
         "Target Update Frequency"
+        self.evaluate_seed = self.random.randint(0, 2**23 - 1)
+        "Seed used to generate evaluation sets"
 
         prev = self.obs_size
         tf.random.set_seed(self.random.random())
@@ -127,12 +128,12 @@ class Agent:
             + 0.3
         )
 
-    def new_environment(self) -> Environment:
+    def new_environment(self, seed=None) -> Environment:
         "Generates a new environment using self.random to generate the seed"
         return Environment(
             self.height,
             self.width,
-            seed=self.random.randint(0, 2**23 - 1),
+            seed=self.random.randint(0, 2**23 - 1) if seed is None else seed,
         )
 
     def create_environment(self) -> Environment:
@@ -205,7 +206,12 @@ class Agent:
 
     def evaluate(self, k: int = 1):
         "Evaluates the model over a number of randomly generated environments"
-        envs = [self.create_environment() for _ in range(k)]
+
+        eval_random = Random(self.evaluate_seed)
+
+        envs = [
+            self.new_environment(eval_random.randint(0, 2**23 - 1)) for _ in range(k)
+        ]
 
         len_obs = envs[0].get_obs_length()
 
@@ -302,12 +308,11 @@ class Agent:
             self.seed,
             self.target_update_frequency,
             self.updates_per_step,
-            self.optimizer
+            self.optimizer,
         )
 
 
 class ExpAgent(Agent):
-
     def create_environment(self) -> Environment:
         env = self.new_environment()
         x, y = env.maze.start

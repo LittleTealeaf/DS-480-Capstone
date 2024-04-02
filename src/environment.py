@@ -80,4 +80,4 @@ class Environment:
     def get_reward(self):
         dist = abs(self.x - self.goal_x) + abs(self.y - self.goal_y)
         max_dist = self.width + self.height
-        return (max_dist - dist) / max_dist
+        return ((max_dist - dist) ** 2) / (max_dist ** 2)

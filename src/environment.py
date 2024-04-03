@@ -75,13 +75,7 @@ class Environment:
 
         Returns `True` if successful. Returns `False` otherwise
         """
-        if (
-            y >= 0
-            and y < self.height
-            and x >= 0
-            and x < self.width
-            and self.maze.grid[y][x] == 0
-        ):
+        if self.is_valid_position(x, y):
             self.x, self.y = x, y
             return True
         return False
@@ -92,6 +86,15 @@ class Environment:
             for i in range(self.width * self.height)
             if self.maze.grid[i // self.width][i % self.width] == 0
         ]
+
+    def is_valid_position(self, x, y):
+        return (
+            y >= 0
+            and y < self.height
+            and x >= 0
+            and x < self.width
+            and self.maze.grid[y][x] == 0
+        )
 
     def move(self, move: int):
         if move == self.UP:

@@ -8,9 +8,10 @@ agent = Agent(
     [750,500,250,125],
     width=3,
     height=3,
-    target_update_frequency=30,
-    updates_per_step=5,
-    learning_rate=learning_rate
+    target_update_frequency=25,
+    updates_per_step=4 * 5,
+    learning_rate=learning_rate,
+    consistent_train=True
 )
 
 ITERATIONS = 10_000
@@ -30,8 +31,13 @@ for model in ["control", "experimental"]:
         agent.train(100)
         ev, freq = agent.evaluate(50)
         data.append([model, i, ev, freq[0], freq[1], freq[2], freq[3]])
+        if agent.nan_check():
+            print("NaN or Inf Found")
+            exit()
 
         end = time.time()
+
+
 
         elapsed = end - start
         elapsed_time += elapsed

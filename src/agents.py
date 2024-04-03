@@ -13,6 +13,9 @@ def default_learning_rate(target_update_frequency):
         return 0.1 * (0.9 ** (epoch // target_update_frequency)) * (0.9 ** (epoch % target_update_frequency))
     return learning_rate
 
+def maze_seed(random: Random):
+    return random.randint(0, 2**23 - 1)
+
 
 @tf.function
 def feed_forward(inputs, layers):
@@ -61,6 +64,7 @@ class Agent:
         height=10,
         width=10,
         seed=None,
+        consistent_train = False,
         target_update_frequency=100,
         updates_per_step=1,
         optimizer=None,
@@ -99,6 +103,8 @@ class Agent:
         "Seed used to generate evaluation sets"
         self.learning_rate = learning_rate if learning_rate is not None else default_learning_rate(target_update_frequency)
         "Learning Rate Function"
+        self.consistent_train = consistent_train
+        self.train_seed = self.random.random() if consistent_train else None
 
         prev = self.obs_size
         tf.random.set_seed(self.random.random())
@@ -134,19 +140,26 @@ class Agent:
         return Environment(
             self.height,
             self.width,
-            seed=self.random.randint(0, 2**23 - 1) if seed is None else seed,
+            seed=maze_seed(self.random) if seed is None else seed,
         )
 
-    def create_environment(self) -> Environment:
+    def create_environment(self, seed = None) -> Environment:
         "Creates a new environment to use in training based on this model's training strategy"
-        return self.new_environment()
+        return self.new_environment(seed=seed)
 
     def populate_replay(self, count: int):
         "Explores new instances of environments to populate the replay database"
-        env = self.create_environment()
+
+        random = self.random
+
+        if self.train_seed:
+            random = Random(self.train_seed)
+
+
+        env = self.create_environment(seed=maze_seed(random))
         for _ in range(count):
             while env.is_solved():
-                env = self.create_environment()
+                env = self.create_environment(seed=maze_seed(random))
 
             obs = env.get_observations()
             sel = self.random.randrange(0, 4)
@@ -310,12 +323,13 @@ class Agent:
             self.target_update_frequency,
             self.updates_per_step,
             self.optimizer,
+            self.consistent_train
         )
 
 
 class ExpAgent(Agent):
-    def create_environment(self) -> Environment:
-        env = self.new_environment()
+    def create_environment(self, seed = None) -> Environment:
+        env = self.new_environment(seed=seed)
         x, y = env.maze.start
         env.set_position(x, y)
 

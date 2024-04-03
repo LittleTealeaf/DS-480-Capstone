@@ -8,6 +8,11 @@ from keras.optimizers import SGD
 def has_invalid_numbers(tensor):
     return tf.reduce_any(tf.logical_or(tf.math.is_inf(tensor), tf.math.is_nan(tensor)))
 
+def default_learning_rate(target_update_frequency):
+    def learning_rate(epoch):
+        return 0.1 * (0.9 ** (epoch // target_update_frequency)) * (0.9 ** (epoch % target_update_frequency))
+    return learning_rate
+
 
 @tf.function
 def feed_forward(inputs, layers):
@@ -59,6 +64,7 @@ class Agent:
         target_update_frequency=100,
         updates_per_step=1,
         optimizer=None,
+        learning_rate = None
     ):
         self.layer_sizes = [i for i in layer_sizes]
         "Layer Sizes used for input"
@@ -91,6 +97,8 @@ class Agent:
         "Target Update Frequency"
         self.evaluate_seed = self.random.randint(0, 2**23 - 1)
         "Seed used to generate evaluation sets"
+        self.learning_rate = learning_rate if learning_rate is not None else default_learning_rate(target_update_frequency)
+        "Learning Rate Function"
 
         prev = self.obs_size
         tf.random.set_seed(self.random.random())
@@ -107,13 +115,6 @@ class Agent:
             (tf.stop_gradient(weights), tf.stop_gradient(bias))
             for weights, bias in self.network
         ]
-
-    def learning_rate(self):
-        "Calculates the learning rate to use"
-        return 0.1 * (
-            0.8 ** (self.iter // self.target_update_frequency)
-            * 0.9 ** (self.iter % self.target_update_frequency)
-        )
 
     def gamma(self):
         "Calculates the gamma value to use"
@@ -186,9 +187,9 @@ class Agent:
         rewards_tf = tf.constant(rewards, dtype=tf.float32)
 
         if self.optimizer is None:
-            self.optimizer = SGD(self.learning_rate())
+            self.optimizer = SGD(self.learning_rate(self.iter))
         else:
-            self.optimizer.learning_rate = self.learning_rate()
+            self.optimizer.learning_rate = self.learning_rate(self.iter)
 
         train(
             state_1_tf,

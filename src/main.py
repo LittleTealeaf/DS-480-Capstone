@@ -1,13 +1,16 @@
 from agents import Agent, ExpAgent
 import time
 
+def learning_rate(epoch):
+    return 0.1 * (0.9 ** (epoch % 100))
 
 agent = Agent(
-    [750,500,250],
-    width=5,
-    height=5,
-    target_update_frequency=100,
-    updates_per_step=1,
+    [750,500,250,125],
+    width=3,
+    height=3,
+    target_update_frequency=30,
+    updates_per_step=5,
+    learning_rate=learning_rate
 )
 
 ITERATIONS = 10_000

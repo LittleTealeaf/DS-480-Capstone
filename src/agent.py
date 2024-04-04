@@ -4,6 +4,7 @@ from random import Random
 from keras.activations import sigmoid
 from keras.optimizers import SGD
 from keras.optimizers.schedules import LearningRateSchedule as KerasLearningrateSchedule
+from keras import backend
 
 
 def invalid_num_check(tensor):
@@ -60,10 +61,15 @@ class Agent:
 
     def default_epsilon(agent):
         return (
-            0.5
-            * (0.9 ** (agent.epoch // agent.params["target_update_interval"]))
-            * (0.9 ** (agent.epoch % agent.params["target_update_interval"]))
+            0.3 * (0.99 ** agent.epoch)
             + 0.3
+        )
+
+    def default_learning_rate(agent):
+        return (
+            0.1 * (
+            0.9 ** (agent.epoch % agent.params["target_update_interval"])) *
+            (0.99 ** (agent.epoch // agent.params["target_update_interval"]))
         )
 
     def __init__(
@@ -77,13 +83,13 @@ class Agent:
         step_update_interval=1,
         gamma=None,
         epsilon=None,
+        use_single_maze = False,
         training_seed=None,
         create_training_seed=False,
         evaluation_seed=None,
         create_evaluation_seed=False,
         evaluate_on_training=False,
         learning_rate=None,
-        learning_rate_schedule=None
     ):
         assert layer_sizes is not None
 
@@ -100,6 +106,13 @@ class Agent:
         self.replay = []
         self.epoch = 0
 
+        self.learning_rate = tf.Variable(0.1,trainable=False)
+
+        if use_single_maze:
+            self.maze_seed = Environment.random_seed(self.random)
+        else:
+            self.maze_seed = None
+
         if create_training_seed and training_seed is None:
             training_seed = self.random.random()
             if evaluate_on_training:
@@ -108,9 +121,8 @@ class Agent:
         if create_evaluation_seed and evaluation_seed is None:
             evaluation_seed = self.random.random()
 
-        if learning_rate_schedule is None:
-            learning_rate_schedule = LearningRateSchedule(learning_rate)
-        learning_rate_schedule.set_agent(self)
+        if learning_rate is None:
+            learning_rate = Agent.default_learning_rate
 
 
         self.params = {
@@ -126,10 +138,11 @@ class Agent:
             "evaluation_seed": evaluation_seed,
             "gamma": gamma,
             "epsilon": epsilon,
+            "use_single_maze": use_single_maze
         }
 
 
-        self.optimizer = SGD(learning_rate=learning_rate_schedule)
+        self.optimizer = SGD(learning_rate=self.learning_rate)
 
 
         self.tf_train = tf.function(train)
@@ -157,7 +170,10 @@ class Agent:
         ]
 
     def create_environment(self, seed=None) -> Environment:
-        return Environment(self.params["width"], self.params["height"], seed=seed)
+        if self.maze_seed is None:
+            return Environment(self.params["width"], self.params["height"], seed=seed)
+        else:
+            return Environment(self.params["width"], self.params["height"],seed=self.maze_seed)
 
     def build_environment(self, seed=None) -> Environment:
         return self.create_environment(seed=seed)
@@ -181,10 +197,11 @@ class Agent:
                 obs_tf = tf.constant(obs, dtype=tf.float32, shape=shape)
                 sel = int(self.tf_feed_forward_argmax(obs_tf, self.network))
 
-            env.move(sel)
+            if env.move(sel):
+                reward = env.get_reward()
+            else:
+                reward = -1.0
             obs_2 = env.get_observations()
-
-            reward = env.get_reward()
 
             if len(self.replay) > self.params["max_replay"]:
                 index = self.random.randint(0, self.params["max_replay"])
@@ -211,6 +228,8 @@ class Agent:
         choices_tf = tf.constant(choices)
         rewards_tf = tf.constant(rewards, dtype=tf.float32)
 
+        backend.set_value(self.learning_rate, self.params["learning_rate"](self))
+
         self.tf_train(
             state_1_tf,
             choices_tf,
@@ -222,7 +241,7 @@ class Agent:
             self.optimizer,
         )
 
-        if self.epoch % self.params["target_update_interval"]:
+        if self.epoch % self.params["target_update_interval"] == 0:
             self.update_target()
 
     def evaluate(self, count: int = 1):
@@ -278,9 +297,11 @@ class Agent:
             def is_valid_position(pos):
                 return env.is_valid_position(pos[0], pos[1])
 
+            counts_sub = -1
+
             while len(stack) > 0:
                 x, y = stack.pop()
-                counts += 1 / (len_m * count)
+                counts_sub += 1
 
                 UP = (x, y + 1)
                 if (
@@ -313,7 +334,43 @@ class Agent:
                     and m[str(LEFT)] == Environment.LEFT
                 ):
                     stack.append(LEFT)
+            counts += counts_sub / (count * (len_m - 1))
         return counts, [i / count for i in frequency]
+
+    def print_policy(self, maze = None):
+        if maze is None:
+            maze = self.create_environment()
+        ls = [[' ' if j == 0 else ' ' for j in i] for i in maze.maze.grid]
+
+        observations = []
+        valids = maze.get_valid_positions()
+        obs_len = maze.get_obs_length()
+
+        for x,y in valids:
+            assert maze.set_position(x,y)
+            observations.append(maze.get_observations())
+
+        observations_tf = tf.constant(
+            observations, shape=(len(observations), obs_len), dtype=tf.float32
+        )
+
+        choices = self.tf_feed_forward_argmax(observations_tf, self.network)
+        choices = [i.numpy() for i in choices]
+
+        for i in range(len(valids)):
+            x,y = valids[i]
+            if choices[i] == Environment.UP:
+                ls[y][x] = '^'
+            elif choices[i] == Environment.DOWN:
+                ls[y][x] = 'v'
+            elif choices[i] == Environment.RIGHT:
+                ls[y][x] = '>'
+            else:
+                ls[y][x] = '<'
+
+        ls[maze.goal_y][maze.goal_x] = 'G'
+
+        print("\n".join(["".join([j for j in i]) for i in ls]))
 
     def has_nan_inf(self):
         for w, b in self.network:
@@ -337,25 +394,14 @@ class ExpAgent(Agent):
         for _ in range(
             (
                 self.epoch
-                // self.params["target_update_interval"]
-                * self.params["step_update_interval"]
+                // (self.params["target_update_interval"]
+                * self.params["step_update_interval"])
             )
             + 1
         ):
-            env.move(self.random.randint(0, 3))
+            move = self.random.choice([
+                i for i in [Environment.UP, Environment.DOWN, Environment.LEFT, Environment.RIGHT] if env.can_move(i)
+            ])
+            env.move(move)
+            # env.move(self.random.randint(0, 3))
         return env
-
-class LearningRateSchedule(KerasLearningrateSchedule):
-    def __init__(self, schedule=None):
-
-        if schedule is None:
-            self.schedule = lambda agent: 0.1 * (0.9 ** (agent.epoch % agent.params["target_update_interval"]))
-        else:
-            self.schedule = schedule
-        self.agent = None
-
-    def set_agent(self, agent):
-        self.agent = agent
-
-    def __call__(self, step):
-        return self.schedule(self.agent)

@@ -21,3 +21,4 @@ plot <- ggplot(
   ) +
   theme_minimal()
 ggsave("images/graph.png", plot = plot, width = 10, height = 8)
+# look at matplotlib

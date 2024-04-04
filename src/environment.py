@@ -22,6 +22,8 @@ class Environment:
     RIGHT = 2
     LEFT = 3
 
+    SCALE = 2
+
     def random_seed(random: Random):
         """
         Creates a randomized seed usable as the base seed of mazes
@@ -89,11 +91,12 @@ class Environment:
 
     def is_valid_position(self, x, y):
         return (
-            y >= 0
+            (y == self.goal_y and x == self.goal_x) or (y >= 0
             and y < self.height
             and x >= 0
             and x < self.width
             and self.maze.grid[y][x] == 0
+            )
         )
 
     def move(self, move: int):
@@ -106,10 +109,21 @@ class Environment:
         if move == self.LEFT:
             return self.set_position(self.x - 1, self.y)
 
+    def can_move(self, move: int):
+        if move == self.UP:
+            return self.is_valid_position(self.x, self.y - 1)
+        if move == self.DOWN:
+            return self.is_valid_position(self.x, self.y + 1)
+        if move == self.RIGHT:
+            return self.is_valid_position(self.x + 1, self.y)
+        if move == self.LEFT:
+            return self.is_valid_position(self.x - 1, self.y)
+
+
     def is_solved(self):
         return self.x == self.goal_x and self.y == self.goal_y
 
     def get_reward(self):
         dist = abs(self.x - self.goal_x) + abs(self.y - self.goal_y)
         max_dist = self.width + self.height
-        return ((max_dist - dist) ** 2) / (max_dist**2)
+        return ((max_dist - dist) ** Environment.SCALE) / (max_dist**Environment.SCALE)

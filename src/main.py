@@ -3,30 +3,32 @@ import time
 import tensorflow as tf
 
 agent = ExpAgent(
-    layer_sizes=[500,500,250,125],
+    layer_sizes=[750,750],
     width=3,
     height=3,
-    target_update_interval=25,
-    step_update_interval=2,
-    create_training_seed=True,
-    evaluate_on_training=True,
-    gamma= lambda _: 0.7,
-    seed=22
+    target_update_interval=100,
+    step_update_interval=4,
+    create_training_seed=False,
+    create_evaluation_seed=True,
+    evaluate_on_training=False,
+    gamma= lambda _: 0.9,
+    seed=3,
+    max_replay=100_000
 )
 
-ITERATIONS = 10
+ITERATIONS = 10_000
 
 data = []
 elapsed_time = 0
 completed_iterations = 0
 TOTAL_ITERATIONS = ITERATIONS * 2
 
-for model in ["control", "experimental"]:
+for model in ["experimental", "control"]:
     for i in range(ITERATIONS):
         start = time.time()
 
-        agent.populate_replay(100)
-        agent.train(500)
+        agent.populate_replay(10)
+        agent.train(50)
         ev, freq = agent.evaluate(50)
         data.append([model, i, ev, freq[0], freq[1], freq[2], freq[3]])
         if agent.has_nan_inf():

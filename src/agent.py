@@ -3,6 +3,7 @@ import tensorflow as tf
 from random import Random
 from keras.activations import sigmoid
 from keras.optimizers import SGD
+from keras.optimizers.schedules import LearningRateSchedule as KerasLearningrateSchedule
 
 
 def invalid_num_check(tensor):
@@ -54,9 +55,6 @@ class Agent:
 
     """
 
-    def default_learning_rate(agent):
-        return 0.1 * 0.9 ** (agent.epoch % agent.params["target_update_interval"])
-
     def default_gamma(agent):
         return 0.8
 
@@ -77,7 +75,6 @@ class Agent:
         seed=None,
         target_update_interval=100,
         step_update_interval=1,
-        learning_rate=None,
         gamma=None,
         epsilon=None,
         training_seed=None,
@@ -85,14 +82,13 @@ class Agent:
         evaluation_seed=None,
         create_evaluation_seed=False,
         evaluate_on_training=False,
+        learning_rate=None,
+        learning_rate_schedule=None
     ):
         assert layer_sizes is not None
 
         if seed is None:
             seed = Random().random()
-
-        if learning_rate is None:
-            learning_rate = Agent.default_learning_rate
 
         if gamma is None:
             gamma = Agent.default_gamma
@@ -112,9 +108,10 @@ class Agent:
         if create_evaluation_seed and evaluation_seed is None:
             evaluation_seed = self.random.random()
 
-        self.tf_train = tf.function(train)
-        self.tf_feed_forward = tf.function(feed_forward)
-        self.tf_feed_forward_argmax = tf.function(feed_forward_argmax)
+        if learning_rate_schedule is None:
+            learning_rate_schedule = LearningRateSchedule(learning_rate)
+        learning_rate_schedule.set_agent(self)
+
 
         self.params = {
             "layer_sizes": layer_sizes,
@@ -131,10 +128,13 @@ class Agent:
             "epsilon": epsilon,
         }
 
-        def optimizer_learning_rate():
-            return self.params["learning_rate"](self)
 
-        self.optimizer = SGD(learning_rate=optimizer_learning_rate)
+        self.optimizer = SGD(learning_rate=learning_rate_schedule)
+
+
+        self.tf_train = tf.function(train)
+        self.tf_feed_forward = tf.function(feed_forward)
+        self.tf_feed_forward_argmax = tf.function(feed_forward_argmax)
 
         self.network = []
 
@@ -344,3 +344,18 @@ class ExpAgent(Agent):
         ):
             env.move(self.random.randint(0, 3))
         return env
+
+class LearningRateSchedule(KerasLearningrateSchedule):
+    def __init__(self, schedule=None):
+
+        if schedule is None:
+            self.schedule = lambda agent: 0.1 * (0.9 ** (agent.epoch % agent.params["target_update_interval"]))
+        else:
+            self.schedule = schedule
+        self.agent = None
+
+    def set_agent(self, agent):
+        self.agent = agent
+
+    def __call__(self, step):
+        return self.schedule(self.agent)

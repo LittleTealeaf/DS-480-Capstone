@@ -1,17 +1,20 @@
-from agent import Agent
+from agent import ExpAgent
 import time
+import tensorflow as tf
 
-agent = Agent(
-    layer_sizes=[500, 500],
+agent = ExpAgent(
+    layer_sizes=[500,500,250,125],
     width=3,
     height=3,
     target_update_interval=25,
-    step_update_interval=4 * 5,
+    step_update_interval=2,
     create_training_seed=True,
     evaluate_on_training=True,
+    gamma= lambda _: 0.7,
+    seed=22
 )
 
-ITERATIONS = 10_000
+ITERATIONS = 10
 
 data = []
 elapsed_time = 0
@@ -23,7 +26,7 @@ for model in ["control", "experimental"]:
         start = time.time()
 
         agent.populate_replay(100)
-        agent.train(100)
+        agent.train(500)
         ev, freq = agent.evaluate(50)
         data.append([model, i, ev, freq[0], freq[1], freq[2], freq[3]])
         if agent.has_nan_inf():
@@ -48,7 +51,7 @@ for model in ["control", "experimental"]:
                 i, ev, freq[0], freq[1], freq[2], freq[3], hours, minutes, seconds
             )
         )
-    agent = agent.to_exp_agent()
+    agent = agent.to_normal_agent()
 
 with open("data.csv", "w") as file:
     file.write("model,iter,evaluation,up,down,right,left\n")

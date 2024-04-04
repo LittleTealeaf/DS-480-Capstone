@@ -11,7 +11,6 @@ def invalid_num_check(tensor):
     return tf.reduce_any(tf.logical_or(has_inf, has_nan))
 
 
-@tf.function
 def feed_forward(inputs, layers):
     variables = inputs
     for w, b in layers:
@@ -21,13 +20,11 @@ def feed_forward(inputs, layers):
     return variables
 
 
-@tf.function
 def feed_forward_argmax(inputs, layers):
     outputs = feed_forward(inputs, layers)
     return tf.argmax(outputs, 1)
 
 
-@tf.function
 def train(s_1, c_1, r_2, s_2, network, target, gamma, optimizer):
     variables = []
 
@@ -115,6 +112,10 @@ class Agent:
         if create_evaluation_seed and evaluation_seed is None:
             evaluation_seed = self.random.random()
 
+        self.tf_train = tf.function(train)
+        self.tf_feed_forward = tf.function(feed_forward)
+        self.tf_feed_forward_argmax = tf.function(feed_forward_argmax)
+
         self.params = {
             "layer_sizes": layer_sizes,
             "max_replay": max_replay,
@@ -178,7 +179,7 @@ class Agent:
             if self.params["epsilon"](self) < self.random.random():
                 shape = (1, obs.size)
                 obs_tf = tf.constant(obs, dtype=tf.float32, shape=shape)
-                sel = int(feed_forward_argmax(obs_tf, self.network))
+                sel = int(self.tf_feed_forward_argmax(obs_tf, self.network))
 
             env.move(sel)
             obs_2 = env.get_observations()
@@ -210,7 +211,7 @@ class Agent:
         choices_tf = tf.constant(choices)
         rewards_tf = tf.constant(rewards, dtype=tf.float32)
 
-        train(
+        self.tf_train(
             state_1_tf,
             choices_tf,
             rewards_tf,
@@ -251,7 +252,7 @@ class Agent:
             observations, shape=(len(observations), len_obs), dtype=tf.float32
         )
 
-        choices = feed_forward_argmax(observations_tf, self.network)
+        choices = self.tf_feed_forward_argmax(observations_tf, self.network)
         choices = [i.numpy() for i in choices]
 
         frequency = [0, 0, 0, 0]
@@ -323,6 +324,9 @@ class Agent:
     def to_exp_agent(self):
         return ExpAgent(**self.params)
 
+    def to_normal_agent(self):
+        return Agent(**self.params)
+
 
 class ExpAgent(Agent):
     def build_environment(self, seed=None) -> Environment:
@@ -332,7 +336,7 @@ class ExpAgent(Agent):
 
         for _ in range(
             (
-                self.iter
+                self.epoch
                 // self.params["target_update_interval"]
                 * self.params["step_update_interval"]
             )

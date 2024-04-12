@@ -58,7 +58,8 @@ for id in range(MODEL_COUNT):
             completed_iterations += 1
 
             avg_time = elapsed_time / completed_iterations
-            estimated_left = (TOTAL_ITERATIONS - completed_iterations) * avg_time
+            estimated_left = (TOTAL_ITERATIONS -
+                              completed_iterations) * avg_time
             hours = estimated_left // 3600
             minutes = (estimated_left % 3600) // 60
             seconds = estimated_left % 60

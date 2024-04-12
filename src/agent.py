@@ -67,9 +67,9 @@ class Agent:
 
     def default_learning_rate(agent):
         return (
-            0.1 * (
-            0.9 ** (agent.epoch % agent.params["target_update_interval"])) *
-            (0.99 ** (agent.epoch // agent.params["target_update_interval"]))
+            0.01 * (
+            0.99 ** (agent.epoch % agent.params["target_update_interval"]))
+            # (0.99 ** (agent.epoch // agent.params["target_update_interval"]))
         )
 
     def __init__(
@@ -151,8 +151,22 @@ class Agent:
 
         self.network = []
 
-        layers = [i for i in layer_sizes]
+        self.update_target()
+        self.update_target()
+
+    def update_target(self):
+        self.target = [
+            (tf.constant(weights.numpy()), tf.constant(bias.numpy()))
+            for weights, bias in self.network
+        ]
+        self.network = []
+
+        # update network to squishimifcation
+
+        layers = [i for i in self.params["layer_sizes"]]
         layers.append(4)
+        height, width = self.params["height"], self.params["width"]
+
 
         prev = Environment(height, width).get_obs_length()
         tf.random.set_seed(self.random.random())
@@ -161,13 +175,7 @@ class Agent:
             bias = tf.Variable(tf.random.normal((layer,)))
             self.network.append((weights, bias))
             prev = layer
-        self.update_target()
 
-    def update_target(self):
-        self.target = [
-            (tf.constant(weights.numpy()), tf.constant(bias.numpy()))
-            for weights, bias in self.network
-        ]
 
     def create_environment(self, seed=None) -> Environment:
         if self.maze_seed is None:
@@ -189,6 +197,7 @@ class Agent:
             while env.is_solved():
                 seed = Environment.random_seed(random)
                 env = self.create_environment(seed=seed)
+
 
             obs = env.get_observations()
             sel = self.random.randint(0, 3)

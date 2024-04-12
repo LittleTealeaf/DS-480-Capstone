@@ -11,7 +11,7 @@ elapsed_time = 0
 completed_iterations = 0
 TOTAL_ITERATIONS = ITERATIONS * 2 * MODEL_COUNT
 
-base_seed = Random(3)
+base_seed = Random(95485)
 
 for id in range(MODEL_COUNT):
 
@@ -26,7 +26,7 @@ for id in range(MODEL_COUNT):
         create_training_seed=False,
         create_evaluation_seed=True,
         evaluate_on_training=False,
-        gamma= lambda _: 0.7,
+        gamma= lambda _: 0.9,
         seed=seed,
         max_replay=10_000,
         use_single_maze=True

@@ -7,9 +7,9 @@ from keras import backend
 
 
 def invalid_num_check(tensor):
-    has_inf = tf.math.is_inf(tensor)
-    has_nan = tf.math.is_nan(tensor)
-    return tf.reduce_any(tf.logical_or(has_inf, has_nan))
+    has_inf = tf.reduce_any(tf.math.is_inf(tensor))
+    has_nan = tf.reduce_any(tf.math.is_nan(tensor))
+    return tf.logical_or(has_inf, has_nan)
 
 
 def feed_forward(inputs, layers):

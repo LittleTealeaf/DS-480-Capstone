@@ -3,7 +3,6 @@ import tensorflow as tf
 from random import Random
 from keras.activations import sigmoid
 from keras.optimizers import SGD
-from keras.optimizers.schedules import LearningRateSchedule as KerasLearningrateSchedule
 from keras import backend
 
 
@@ -61,16 +60,13 @@ class Agent:
 
     def default_epsilon(agent):
         return (
-            0.3 * (0.99 ** agent.epoch)
-            + 0.3
+            0.7 * (0.9 ** (agent.epoch %
+                   agent.params["target_update_interval"])) + 0.3
         )
 
     def default_learning_rate(agent):
-        return (
-            0.01 * (
-            0.99 ** (agent.epoch % agent.params["target_update_interval"]))
-            # (0.99 ** (agent.epoch // agent.params["target_update_interval"]))
-        )
+        epoch = agent.epoch % agent.params["target_update_interval"]
+        return 0.01 * (0.99**epoch)
 
     def __init__(
         self,
@@ -83,13 +79,15 @@ class Agent:
         step_update_interval=1,
         gamma=None,
         epsilon=None,
-        use_single_maze = False,
+        use_single_maze=False,
         training_seed=None,
         create_training_seed=False,
         evaluation_seed=None,
         create_evaluation_seed=False,
         evaluate_on_training=False,
         learning_rate=None,
+        train_on_maze_config=True,
+        squish_on_update_target=True,
     ):
         assert layer_sizes is not None
 
@@ -103,10 +101,11 @@ class Agent:
             epsilon = Agent.default_epsilon
 
         self.random = Random(seed)
+        self.exp_random = Random(self.random.random())
         self.replay = []
         self.epoch = 0
 
-        self.learning_rate = tf.Variable(0.1,trainable=False)
+        self.learning_rate = tf.Variable(0.1, trainable=False)
 
         if use_single_maze:
             self.maze_seed = Environment.random_seed(self.random)
@@ -124,7 +123,6 @@ class Agent:
         if learning_rate is None:
             learning_rate = Agent.default_learning_rate
 
-
         self.params = {
             "layer_sizes": layer_sizes,
             "max_replay": max_replay,
@@ -138,12 +136,12 @@ class Agent:
             "evaluation_seed": evaluation_seed,
             "gamma": gamma,
             "epsilon": epsilon,
-            "use_single_maze": use_single_maze
+            "use_single_maze": use_single_maze,
+            "train_on_maze_config": train_on_maze_config,
+            "squish_on_update_target": squish_on_update_target,
         }
 
-
         self.optimizer = SGD(learning_rate=self.learning_rate)
-
 
         self.tf_train = tf.function(train)
         self.tf_feed_forward = tf.function(feed_forward)
@@ -151,24 +149,13 @@ class Agent:
 
         self.network = []
 
-        self.update_target()
-        self.update_target()
-
-    def update_target(self):
-        self.target = [
-            (tf.constant(weights.numpy()), tf.constant(bias.numpy()))
-            for weights, bias in self.network
-        ]
-        self.network = []
-
-        # update network to squishimifcation
-
-        layers = [i for i in self.params["layer_sizes"]]
+        layers = [i for i in layer_sizes]
         layers.append(4)
         height, width = self.params["height"], self.params["width"]
 
-
-        prev = Environment(height, width).get_obs_length()
+        prev = Environment(
+            height, width, render_layout=train_on_maze_config
+        ).get_obs_length()
         tf.random.set_seed(self.random.random())
         for layer in layers:
             weights = tf.Variable(tf.random.normal((prev, layer)))
@@ -176,12 +163,41 @@ class Agent:
             self.network.append((weights, bias))
             prev = layer
 
+        self.target = None
+        self.update_target()
+
+    def update_target(self):
+
+        squish = self.target is not None
+
+        self.target = [
+            (tf.constant(weights.numpy()), tf.constant(bias.numpy()))
+            for weights, bias in self.network
+        ]
+
+        if squish and self.params["squish_on_update_target"]:
+            tf.random.set_seed(self.random.random())
+            for weights, bias in self.network:
+                for var in [weights, bias]:
+                    var.assign(
+                        tf.math.add(sigmoid(var.numpy()), -0.5),
+                    )
 
     def create_environment(self, seed=None) -> Environment:
         if self.maze_seed is None:
-            return Environment(self.params["width"], self.params["height"], seed=seed)
+            return Environment(
+                self.params["width"],
+                self.params["height"],
+                seed=seed,
+                render_layout=self.params["train_on_maze_config"],
+            )
         else:
-            return Environment(self.params["width"], self.params["height"],seed=self.maze_seed)
+            return Environment(
+                self.params["width"],
+                self.params["height"],
+                seed=self.maze_seed,
+                render_layout=self.params["train_on_maze_config"],
+            )
 
     def build_environment(self, seed=None) -> Environment:
         return self.create_environment(seed=seed)
@@ -197,7 +213,6 @@ class Agent:
             while env.is_solved():
                 seed = Environment.random_seed(random)
                 env = self.create_environment(seed=seed)
-
 
             obs = env.get_observations()
             sel = self.random.randint(0, 3)
@@ -237,7 +252,8 @@ class Agent:
         choices_tf = tf.constant(choices)
         rewards_tf = tf.constant(rewards, dtype=tf.float32)
 
-        backend.set_value(self.learning_rate, self.params["learning_rate"](self))
+        backend.set_value(self.learning_rate,
+                          self.params["learning_rate"](self))
 
         self.tf_train(
             state_1_tf,
@@ -346,17 +362,17 @@ class Agent:
             counts += counts_sub / (count * (len_m - 1))
         return counts, [i / count for i in frequency]
 
-    def print_policy(self, maze = None):
+    def print_policy(self, maze=None):
         if maze is None:
             maze = self.create_environment()
-        ls = [[' ' if j == 0 else ' ' for j in i] for i in maze.maze.grid]
+        ls = [[" " if j == 0 else " " for j in i] for i in maze.maze.grid]
 
         observations = []
         valids = maze.get_valid_positions()
         obs_len = maze.get_obs_length()
 
-        for x,y in valids:
-            assert maze.set_position(x,y)
+        for x, y in valids:
+            assert maze.set_position(x, y)
             observations.append(maze.get_observations())
 
         observations_tf = tf.constant(
@@ -367,17 +383,17 @@ class Agent:
         choices = [i.numpy() for i in choices]
 
         for i in range(len(valids)):
-            x,y = valids[i]
+            x, y = valids[i]
             if choices[i] == Environment.UP:
-                ls[y][x] = '^'
+                ls[y][x] = "^"
             elif choices[i] == Environment.DOWN:
-                ls[y][x] = 'v'
+                ls[y][x] = "v"
             elif choices[i] == Environment.RIGHT:
-                ls[y][x] = '>'
+                ls[y][x] = ">"
             else:
-                ls[y][x] = '<'
+                ls[y][x] = "<"
 
-        ls[maze.goal_y][maze.goal_x] = 'G'
+        ls[maze.goal_y][maze.goal_x] = "G"
 
         print("\n".join(["".join([j for j in i]) for i in ls]))
 
@@ -403,14 +419,24 @@ class ExpAgent(Agent):
         for _ in range(
             (
                 self.epoch
-                // (self.params["target_update_interval"]
-                * self.params["step_update_interval"])
+                // (
+                    self.params["target_update_interval"]
+                    * self.params["step_update_interval"]
+                )
             )
             + 1
         ):
-            move = self.random.choice([
-                i for i in [Environment.UP, Environment.DOWN, Environment.LEFT, Environment.RIGHT] if env.can_move(i)
-            ])
+            move = self.exp_random.choice(
+                [
+                    i
+                    for i in [
+                        Environment.UP,
+                        Environment.DOWN,
+                        Environment.LEFT,
+                        Environment.RIGHT,
+                    ]
+                    if env.can_move(i)
+                ]
+            )
             env.move(move)
-            # env.move(self.random.randint(0, 3))
         return env

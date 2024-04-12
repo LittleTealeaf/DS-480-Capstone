@@ -1,6 +1,7 @@
 from mazelib import Maze
 from mazelib.generate.Prims import Prims
 from random import Random
+import numpy as np
 
 
 class Environment:
@@ -22,7 +23,7 @@ class Environment:
     RIGHT = 2
     LEFT = 3
 
-    SCALE = 2
+    SCALE = 2.5
 
     def random_seed(random: Random):
         """
@@ -38,10 +39,14 @@ class Environment:
         """
         return random.randint(0, 2**23 - 1)
 
-    def __init__(self, height: int = 10, width: int = 10, seed=None):
+    def __init__(
+        self, height: int = 10, width: int = 10, seed=None, render_layout=True
+    ):
         self.maze = Maze(seed)
         self.maze.generator = Prims(height, width)
         self.maze.generate()
+
+        self.show_layout = render_layout
 
         self.width, self.height = self.maze.grid.shape
 
@@ -52,9 +57,13 @@ class Environment:
 
     def get_observations(self):
         """Returns the observations of the current state as a numpy array"""
-        obs = self.maze.grid.flatten().copy()
-        size = int(obs.size)
-        obs.resize(size + 2 * (self.width + self.height), refcheck=False)
+        if self.show_layout:
+            obs = self.maze.grid.flatten().copy()
+            size = int(obs.size)
+            obs.resize(size + 2 * (self.width + self.height), refcheck=False)
+        else:
+            obs = np.zeros(2 * (self.width + self.height))
+            size = 0
         obs[size + self.x] = 1
         obs[size + self.width + self.y] = 1
         obs[size + self.width + self.height + self.goal_x] = 1
@@ -90,13 +99,12 @@ class Environment:
         ]
 
     def is_valid_position(self, x, y):
-        return (
-            (y == self.goal_y and x == self.goal_x) or (y >= 0
+        return (y == self.goal_y and x == self.goal_x) or (
+            y >= 0
             and y < self.height
             and x >= 0
             and x < self.width
             and self.maze.grid[y][x] == 0
-            )
         )
 
     def move(self, move: int):
@@ -119,11 +127,11 @@ class Environment:
         if move == self.LEFT:
             return self.is_valid_position(self.x - 1, self.y)
 
-
     def is_solved(self):
         return self.x == self.goal_x and self.y == self.goal_y
 
     def get_reward(self):
         dist = abs(self.x - self.goal_x) + abs(self.y - self.goal_y)
         max_dist = self.width + self.height
-        return ((max_dist - dist) ** Environment.SCALE) / (max_dist**Environment.SCALE)
+        scale = Environment.SCALE
+        return ((max_dist - dist) ** scale) / (max_dist**scale)

@@ -2,15 +2,15 @@ from agent import ExpAgent
 import time
 from random import Random
 
-MODEL_COUNT = 10
-ITERATIONS = 10_000
+MODEL_COUNT = 2
+ITERATIONS = 20_000
 
 data = []
 elapsed_time = 0
 completed_iterations = 0
 TOTAL_ITERATIONS = ITERATIONS * 2 * MODEL_COUNT
 
-base_seed = Random(12)
+base_seed = Random(294)
 
 PRINT_LINE_CONFIG = (
     "{} {} Iter {}, {:.9f} [{:.2f},{:.2f},{:.2f},{:.2f}] Rem: {}h {}m {:.2f}s"
@@ -20,11 +20,13 @@ for id in range(MODEL_COUNT):
 
     seed = base_seed.random()
 
+
+
     agent = ExpAgent(
-        layer_sizes=[1000, 1000, 1000, 1000],
+        layer_sizes=[100],
         width=3,
         height=3,
-        target_update_interval=200,
+        target_update_interval=500,
         step_update_interval=1,
         create_training_seed=False,
         create_evaluation_seed=True,
@@ -35,14 +37,15 @@ for id in range(MODEL_COUNT):
         use_single_maze=True,
         train_on_maze_config=False,
         squish_on_update_target=True,
+        swap_on_update_target=False
     )
 
     for model in ["experimental", "control"]:
         for i in range(ITERATIONS):
             start = time.time()
 
-            agent.populate_replay(50)
-            agent.train(25)
+            agent.populate_replay(64,to_solved=True)
+            agent.train(512)
             ev, freq = agent.evaluate(1)
             data.append([model, id, i, ev, freq[0], freq[1], freq[2], freq[3]])
             if agent.has_nan_inf():

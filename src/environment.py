@@ -23,7 +23,7 @@ class Environment:
     RIGHT = 2
     LEFT = 3
 
-    SCALE = 2.5
+    SCALE = 1
 
     def random_seed(random: Random):
         """
@@ -130,7 +130,7 @@ class Environment:
     def is_solved(self):
         return self.x == self.goal_x and self.y == self.goal_y
 
-    def get_reward(self):
+    def get_reward(self) -> float:
         dist = abs(self.x - self.goal_x) + abs(self.y - self.goal_y)
         max_dist = self.width + self.height
         scale = Environment.SCALE

@@ -1,7 +1,7 @@
 from environment import Environment
 import tensorflow as tf
 from random import Random
-from keras.activations import sigmoid
+from keras.activations import sigmoid, relu
 from keras.optimizers import SGD
 from keras import backend
 
@@ -40,7 +40,9 @@ def train(s_1, c_1, r_2, s_2, network, target, gamma, optimizer):
         target_out_max = tf.reduce_max(target_out, axis=1)
         target_out_scaled = tf.multiply(gamma, target_out_max)
 
-        loss_raw = target_out_scaled - network_var_out - r_2
+        target_q_value = target_out_scaled + r_2
+
+        loss_raw = target_q_value - network_var_out
 
         loss = tf.math.square(loss_raw)
         loss_mean = tf.reduce_mean(loss)
@@ -60,8 +62,8 @@ class Agent:
 
     def default_epsilon(agent):
         return (
-            0.7 * (0.9 ** (agent.epoch %
-                   agent.params["target_update_interval"])) + 0.3
+            0.6 * (0.99 ** (agent.epoch %
+                   agent.params["target_update_interval"])) + 0.4
         )
 
     def default_learning_rate(agent):
@@ -88,6 +90,7 @@ class Agent:
         learning_rate=None,
         train_on_maze_config=True,
         squish_on_update_target=True,
+        swap_on_update_target = False
     ):
         assert layer_sizes is not None
 
@@ -139,6 +142,7 @@ class Agent:
             "use_single_maze": use_single_maze,
             "train_on_maze_config": train_on_maze_config,
             "squish_on_update_target": squish_on_update_target,
+            "swap_on_update_target": swap_on_update_target
         }
 
         self.optimizer = SGD(learning_rate=self.learning_rate)
@@ -148,6 +152,7 @@ class Agent:
         self.tf_feed_forward_argmax = tf.function(feed_forward_argmax)
 
         self.network = []
+        self.target = []
 
         layers = [i for i in layer_sizes]
         layers.append(4)
@@ -158,30 +163,37 @@ class Agent:
         ).get_obs_length()
         tf.random.set_seed(self.random.random())
         for layer in layers:
-            weights = tf.Variable(tf.random.normal((prev, layer)))
-            bias = tf.Variable(tf.random.normal((layer,)))
+            weights = tf.Variable(tf.random.uniform((prev, layer),minval=-0.1,maxval=0.1))
+            bias = tf.Variable(tf.random.uniform((layer,),minval=-0.1,maxval=0.1))
             self.network.append((weights, bias))
-            prev = layer
 
-        self.target = None
-        self.update_target()
+            # weights_target = tf.random.uniform((prev, layer),minval=-0.1,maxval=0.1)
+            # bias_target = tf.random.uniform((layer,),minval=-0.1,maxval=0.1)
+            weights_target = tf.zeros((prev, layer))
+            bias_target = tf.zeros((layer, ))
+            self.target.append((weights_target, bias_target))
+
+
+
+            prev = layer
 
     def update_target(self):
 
-        squish = self.target is not None
-
+        target = self.target
         self.target = [
             (tf.constant(weights.numpy()), tf.constant(bias.numpy()))
             for weights, bias in self.network
         ]
-
-        if squish and self.params["squish_on_update_target"]:
-            tf.random.set_seed(self.random.random())
+        if self.params["swap_on_update_target"]:
+            for i in range(len(self.network)):
+                weights, bias = self.network[i]
+                weights_target, bias_target = target[i]
+                weights.assign(weights_target.numpy())
+                bias.assign(bias_target.numpy())
+        if self.params["squish_on_update_target"]:
             for weights, bias in self.network:
-                for var in [weights, bias]:
-                    var.assign(
-                        tf.math.add(sigmoid(var.numpy()), -0.5),
-                    )
+                for var in (weights, bias):
+                    var.assign(sigmoid(var.numpy()) - 0.5)
 
     def create_environment(self, seed=None) -> Environment:
         if self.maze_seed is None:
@@ -202,7 +214,7 @@ class Agent:
     def build_environment(self, seed=None) -> Environment:
         return self.create_environment(seed=seed)
 
-    def populate_replay(self, count: int):
+    def populate_replay(self, count: int = -1, to_solved: bool = False):
         random = self.random
 
         if self.params["training_seed"] is not None:
@@ -211,8 +223,11 @@ class Agent:
         env = self.create_environment(seed=Environment.random_seed(random))
         for _ in range(count):
             while env.is_solved():
+                if to_solved:
+                    return
                 seed = Environment.random_seed(random)
                 env = self.create_environment(seed=seed)
+
 
             obs = env.get_observations()
             sel = self.random.randint(0, 3)
@@ -224,7 +239,7 @@ class Agent:
             if env.move(sel):
                 reward = env.get_reward()
             else:
-                reward = -1.0
+                reward = 0.0
             obs_2 = env.get_observations()
 
             if len(self.replay) > self.params["max_replay"]:

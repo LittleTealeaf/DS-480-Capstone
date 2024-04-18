@@ -23,7 +23,7 @@ class Environment:
     RIGHT = 2
     LEFT = 3
 
-    SCALE = 1
+    SCALE = 2
 
     def random_seed(random: Random):
         """
@@ -52,22 +52,26 @@ class Environment:
 
         self.maze.generate_entrances(start_outer=False, end_outer=True)
 
-        self.x, self.y = self.maze.start
-        self.goal_x, self.goal_y = self.maze.end
+        self.y, self.x = self.maze.start
+        self.goal_y, self.goal_x = self.maze.end
 
     def get_observations(self):
         """Returns the observations of the current state as a numpy array"""
         if self.show_layout:
             obs = self.maze.grid.flatten().copy()
             size = int(obs.size)
-            obs.resize(size + 2 * (self.width + self.height), refcheck=False)
+            obs.resize(size + 2 * (self.width + self.height) + 4, refcheck=False)
         else:
-            obs = np.zeros(2 * (self.width + self.height))
+            obs = np.zeros(2 * (self.width + self.height) + 4)
             size = 0
         obs[size + self.x] = 1
         obs[size + self.width + self.y] = 1
         obs[size + self.width + self.height + self.goal_x] = 1
         obs[size + 2 * self.width + self.height + self.goal_y] = 1
+        obs[size + 2 * self.width + 2 * self.height + 0] = 1 if self.can_move(Environment.UP) else 0
+        obs[size + 2 * self.width + 2 * self.height + 1] = 1 if self.can_move(Environment.DOWN) else 0
+        obs[size + 2 * self.width + 2 * self.height + 2] = 1 if self.can_move(Environment.LEFT) else 0
+        obs[size + 2 * self.width + 2 * self.height + 3] = 1 if self.can_move(Environment.RIGHT) else 0
         return obs
 
     def get_obs_length(self):
@@ -131,7 +135,11 @@ class Environment:
         return self.x == self.goal_x and self.y == self.goal_y
 
     def get_reward(self) -> float:
-        dist = abs(self.x - self.goal_x) + abs(self.y - self.goal_y)
-        max_dist = self.width + self.height
-        scale = Environment.SCALE
-        return ((max_dist - dist) ** scale) / (max_dist**scale)
+        if self.is_solved():
+            return 1.0
+        else:
+            return 0.0
+        # dist = abs(self.x - self.goal_x) + abs(self.y - self.goal_y)
+        # max_dist = self.width + self.height
+        # scale = Environment.SCALE
+        # return ((max_dist - dist) ** scale) / (max_dist**scale)

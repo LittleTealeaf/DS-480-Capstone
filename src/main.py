@@ -10,7 +10,7 @@ elapsed_time = 0
 completed_iterations = 0
 TOTAL_ITERATIONS = ITERATIONS * 2 * MODEL_COUNT
 
-base_seed = Random(294)
+base_seed = Random(923)
 
 PRINT_LINE_CONFIG = (
     "{} {} Iter {}, {:.9f} [{:.2f},{:.2f},{:.2f},{:.2f}] Rem: {}h {}m {:.2f}s"
@@ -23,20 +23,20 @@ for id in range(MODEL_COUNT):
 
 
     agent = ExpAgent(
-        layer_sizes=[100],
+        layer_sizes=[1000,1000,1000,1000],
         width=3,
         height=3,
-        target_update_interval=500,
-        step_update_interval=1,
+        target_update_interval=100,
+        step_update_interval=20,
         create_training_seed=False,
         create_evaluation_seed=True,
         evaluate_on_training=False,
-        gamma=lambda _: 0.9,
+        gamma=lambda _: 0.97,
         seed=seed,
-        max_replay=10_000,
+        max_replay=500,
         use_single_maze=True,
         train_on_maze_config=False,
-        squish_on_update_target=True,
+        squish_on_update_target=False,
         swap_on_update_target=False
     )
 
@@ -44,8 +44,10 @@ for id in range(MODEL_COUNT):
         for i in range(ITERATIONS):
             start = time.time()
 
-            agent.populate_replay(64,to_solved=True)
-            agent.train(512)
+            while len(agent.replay) < 64:
+                agent.populate_replay(10)
+            agent.populate_replay(100)
+            agent.train(64)
             ev, freq = agent.evaluate(1)
             data.append([model, id, i, ev, freq[0], freq[1], freq[2], freq[3]])
             if agent.has_nan_inf():

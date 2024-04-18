@@ -4,6 +4,7 @@ from random import Random
 from keras.activations import sigmoid, relu
 from keras.optimizers import SGD
 from keras import backend
+import keras
 
 
 def invalid_num_check(tensor):
@@ -162,15 +163,22 @@ class Agent:
             height, width, render_layout=train_on_maze_config
         ).get_obs_length()
         tf.random.set_seed(self.random.random())
+
+        initializer = keras.initializers.VarianceScaling(
+            scale=0.1,
+            mode="fan_in",
+            distribution="truncated_normal",
+        )
+
         for layer in layers:
-            weights = tf.Variable(tf.random.uniform((prev, layer),minval=-0.1,maxval=0.1))
-            bias = tf.Variable(tf.random.uniform((layer,),minval=-0.1,maxval=0.1))
+            weights = tf.Variable(initializer((prev, layer)))
+            bias = tf.Variable(initializer((layer,)))
+
+
             self.network.append((weights, bias))
 
-            # weights_target = tf.random.uniform((prev, layer),minval=-0.1,maxval=0.1)
-            # bias_target = tf.random.uniform((layer,),minval=-0.1,maxval=0.1)
-            weights_target = tf.zeros((prev, layer))
-            bias_target = tf.zeros((layer, ))
+            weights_target = tf.Variable(initializer((prev, layer)))
+            bias_target = tf.Variable(initializer((layer,)))
             self.target.append((weights_target, bias_target))
 
 
@@ -239,7 +247,7 @@ class Agent:
             if env.move(sel):
                 reward = env.get_reward()
             else:
-                reward = 0.0
+                reward = -1.0
             obs_2 = env.get_observations()
 
             if len(self.replay) > self.params["max_replay"]:
@@ -435,8 +443,7 @@ class ExpAgent(Agent):
             (
                 self.epoch
                 // (
-                    self.params["target_update_interval"]
-                    * self.params["step_update_interval"]
+                    self.params["step_update_interval"]
                 )
             )
             + 1

@@ -55,6 +55,8 @@ class Environment:
         self.y, self.x = self.maze.start
         self.goal_y, self.goal_x = self.maze.end
 
+        self.maze.grid[self.goal_y][self.goal_x] = 0
+
     def get_observations(self):
         """Returns the observations of the current state as a numpy array"""
         if self.show_layout:
@@ -136,9 +138,9 @@ class Environment:
 
     def get_reward(self) -> float:
         if self.is_solved():
-            return 1.0
+            return 10.0
         else:
-            return 0.0
+            return -0.1
         # dist = abs(self.x - self.goal_x) + abs(self.y - self.goal_y)
         # max_dist = self.width + self.height
         # scale = Environment.SCALE

@@ -48,19 +48,6 @@ plot <- ggplot(
   geom_vline(xintercept = 100) +
   theme_minimal()
 ggsave("images/graph_directional.svg", plot = plot, width = 4, height = 4)
-ggsave("images/graph_directional.png", plot = plot, width = 10, height = 8)
+ggsave("images/graph_directional.png", plot = plot, width = 7, height = 5)
 
 
-
-# plot <- ggplot(
-#   data = df %>%
-#   mutate(
-#     Model = model,
-#     Evaluation = evaluation,
-#     Iter = iter,
-#     Up = up,
-#     Down = down,
-#     Right = right,
-#     Left = left,
-#   )
-# )

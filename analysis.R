@@ -1,24 +1,31 @@
 library(tidyverse)
 df <- read.csv("data.csv") %>%
   mutate(model = ifelse(model == "control", "Experimental", "Control")) %>%
-  filter(id == 0) %>%
-  filter(iter < 2000)
+  filter(id == 0)
+
+df_evaluation <- df %>%
+  mutate(iter = floor(iter / 10.0) * 10.0) %>%
+  group_by(model, id, iter) %>%
+  summarize(evaluation = mean(evaluation))
 
 plot <- ggplot(
-  data = df %>% mutate(
+  data = df_evaluation %>% mutate(
     Model = model,
     Evaluation = evaluation,
     Iteration = iter,
-    Label = if_else(iter == max(iter), as.character(model), NA_character_)
   ),
   mapping = aes(x = Iteration, y = Evaluation, color = Model),
 ) +
-  geom_smooth(method = "loess", se = FALSE, show.legend = FALSE) +
-  geom_point() +
+  geom_smooth(method = "loess", se = FALSE) +
   theme_minimal()
-ggsave("images/graph.svg", plot = plot, width = 10, height = 8)
+ggsave("images/graph_evaluation.svg", plot = plot, width = 10, height = 8)
+ggsave(
+  "paper/svg-graphs/graph_evaluation.svg",
+  plot = plot,
+  width = 8,
+  height = 6
+)
 ggsave("images/graph.png", plot = plot, width = 10, height = 8)
-# look at matplotlib
 
 df_directional <- df %>%
   pivot_longer(
@@ -44,10 +51,15 @@ plot <- ggplot(
   )
 ) +
   geom_line() +
-  facet_wrap(~ Model, scales = "free_y", dir = "v") +
+  facet_wrap(~Model, scales = "free_y", dir = "v") +
   geom_vline(xintercept = 100) +
   theme_minimal()
-ggsave("images/graph_directional.svg", plot = plot, width = 4, height = 4)
+
+ggsave("paper/svg/graph_directional.svg", plot = plot, width = 4, height = 4)
+ggsave(
+  "paper/svg-graphs/graph_directional.svg",
+  plot = plot,
+  width = 10,
+  height = 8
+)
 ggsave("images/graph_directional.png", plot = plot, width = 7, height = 5)
-
-

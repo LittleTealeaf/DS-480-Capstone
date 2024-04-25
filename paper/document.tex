@@ -7,6 +7,7 @@
 \usepackage{subcaption}
 \usepackage{lipsum}
 \usepackage{setspace}
+\usepackage{amsmath}
 
 \graphicspath{{../images}}
 
@@ -22,10 +23,6 @@
 \tableofcontents
 
 \newpage
-
-\begin{quote}
-	(Rest of document is in progress, discussion is being submitted)
-\end{quote}
 
 \section{Abstract}
 
@@ -62,24 +59,83 @@ The data collected will be able to suggest whether this training strategy improv
 \section{Methods}
 
 
-\subsection{Environment}
-\paragraph{}
+\paragraph{Environment}
 
 In this project, the task of the agent is to explore a simple maze.
-The maze is stored as a 2-dimensional array of locations, which can either be empty or filled in.
-The maze itself is generated and stored using mazelib \cite{lib_mazelib} in Python \cite{lang_python}.
-The output of the environment consists of the maze configuration, the current location, and the target goal.
-The maze configuration is represented by a flattened array representing empty ($0$) spaces and walls ($1$).
-The current position and goal position are stored as their x and y coordinates using $n * m$ variables.
-Similar to the configuration, 
+The maze is stored in a 2-dimensional array consisting of empty spaces and walls, generated using the Python \cite{lang_python} library MazeLib \cite{lib_mazelib}.
+A wrapper class is created to manage the initial randomization seed, current location, reward function, and observational output.
+
+Throughout training, the same maze is used to keep it simpler.
+For this reason, the state vector used as input for the model only needs to describe the agent's current location.
+This will be done by providing both the $x$ and $y$ coordinate of the agent with $n + m$ variables, where $n$ is the width and $m$ is the height.
+The location will be represented by setting the corresponding $x$ and $y$ variables to $1$, and leaving the rest as $0$.
+For example, the dimensions of the maze used in this paper is $9x9$.
+Thus, the state vector consists of $18$ variables; $9$ to specify the $x$ position, and $9$ to specify the $y$ position.
+
+In order to direct the agent towards the goal, a reward function is used that associates the current position with some reward value.
+For this project, the reward function will scale based on how far away the agent is from the goal.
+When the agent is at the goal, it will obtain a reward of $1$. When it is further away from the goal, it receives a reward close to $0$.
+The implementation used for this project uses the manhattan distance to calculate the reward.
+It uses the following formula, where $\text{dist}$ is the manhattan distance from the agent to the goal, and $\text{max dist}$ is the maximum distance possible in the maze, or the maze's $\text{height} + \text{width}$.
+
+$$\text{Reward} = \frac{(\text{max dist} - \text{dist}) ^ 2}{\text{max dist}^2}$$
+
+This reward function results in an exponential drop in reward when the agent moves away from the goal, but keeps the reward inbetween the bounds of $0$ to $1$.
 
 
-\subsection{Reinforcement Learning Model}
+\paragraph{Agent}
+The agent used in this project is a very simple implementation of a Deep Q-Learning agent.
+Deep Q-Learning is an extension of Q-Learning, which teaches agents how to optimally perfor in a Markovian Decision Tree \cite{article_q_learning}.
+Q-Learning uses a Q-Function, typically as a table, to track the expected utilities of being in some state and taking some action.
+For example, the function or table would return a high expected utility if the state was right next to the goal and the action took the agent to that goal.
 
-\subsection{Agent Training}
+In Q-Learning, the agent explores the environment and gathers observations of states and actions into a replay experience \cite{article_reinforcement_learning_for_robots}.
 
-\subsection{Data Collection}
+Deep Q-Learning extends Q-Learning by using a neural network to approximate the Q-Function \cite{article_human_level_control_deep_reinforcement_learning}.
+The neural network used in such a way is called the DQN, or Deep Q-Network.
+To reduce the number of times it needs to be run, the DQN accepts the current state as the input, and a distinct output for each of the possible actions \cite{article_reinforcement_learning_survey}.
+The goal of training the DQN is to make each of the distinct outputs equal the expected utility of taking that action from the inputted state.
 
+In order to improve the stability of training, a target network is used to estimate the future reward \cite{article_human_level_control_deep_reinforcement_learning}.
+The target network is simply a copy of the DQN, but it only gets updated after a certain number of training cycles.
+This is done so that the DQN isn't trying to train against a constantly updating version of itself, but rather a previous version of itself.
+
+The agent is implemented in Python \cite{lang_python}, and uses the TensorFlow \cite{lib_tensorflow} library to accelerate performance using an NVIDIA GPU.
+
+
+% \cite{lib_tensorflow}
+%
+% I will cite \cite{article_human_level_control_deep_reinforcement_learning}.
+
+
+\paragraph{Training} 
+The difference between the control model and the experimental model is down to the particular way of providing entries into the replay database.
+When the control model starts training, it's placed at the natural beginning of the environment, as it would if it were in many other common environments like video games \cite{article_reinforcement_learning_survey}.
+This means that the agent needs to first explore in order to find the goal, slowly learning the environment.
+
+The experimental model takes a different approach and starts close to the goal.
+At first, the agent is placed right next to the goal, where it can easily figure out where it needs to go.
+Throughout training, the agent is slowly placed further and further away from the goal.
+This is done slow enough so the agent can reacquaint itself and remember where the goal is.
+
+
+\paragraph{Policy Evaluation}
+
+Throughout training, some evaluation of how well the model can solve the maze is needed to track progress.
+To do this, the policy is first created from the model by placing the agent in every possible state and recording the action with the highest expected utility \cite{article_reinforcement_learning_survey}.
+Then, we start at the goal and perform a breadth first search to find the number of states that, by following the policy, will lead to the goal.
+We divide the number of states that lead to the goal in this way by the total number of states to obtain the proportion of states that lead to the goal.
+This value can be used as a measurement of how much of the maze the agent can solve using its policy.
+
+\paragraph{Data Collection and Analysis}
+
+In order to provide insight into the convergence rates of both models, data is collected after each training iteration.
+After each training cycle, the policy generated and two sets of variables are recorded.
+First, the policy evaluation is included as a primary means of tracking the agent's progress.
+Second, the frequency of each unique action used in the policy is included to expose trends in the agent's policy.
+These data points are then stored in a CSV file after training is completed.
+To analyze the data, the CSV file is loaded into R \cite{lang_r} and aggregated using libraries included in the tidyverse \cite{lib_tidyverse} package.
+The visualizations shown in this paper are created using ggplot2 \cite{lib_ggplot2}.
 
 \section{Results (WIP)}
 

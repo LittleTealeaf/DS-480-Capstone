@@ -30,25 +30,8 @@
 
 \section{Introduction}
 
-% \paragraph{}
-% Reinforcement learning is a subset of machine learning that aims to complete a goal in an environment.
-% This can range from solving a maze, to playing a video game, to learning how to drive a car.
-% Regardless of the environment, the goal of the reinforcement learning agent is to find a policy, or a mapping of all possible states to the actions the agent takes, that will maximize some long-term reward \cite{article_reinforcement_learning_survey}.
-% An agent does this by learning the Q-Values associated with the environment, or the estimated reward for taking some action $A$ at a state $S$.
-% This method alone is infeasable for more complicated environments, where accounting for every action in every possible state is nearly impossible to represent, or would take too long to train.
-% Deep-Q Learning provides a solution by using a neural network to \textit{estimate} the Q-Values of each action given the current state \cite{article_human_level_control_deep_reinforcement_learning}.
-%
-% % Remaining Issues
-% \paragraph{}
-% Simple back propagation techniques, used to train and modify neural networks, can often run into the issue of requiring a lot of time to train \cite{article_accelerating_neural_networks_weight_extrapolations}.
-% As the data sets we use get bigger and more complex, the longer it takes for models to train and accurately model the patterns presented.
-% Deep-Q learning models are no different.
-% Additionally, some environments may have many states with no reward and few states with positive or negative reward.
-% This means that agents must take more steps before finding a positive or negative reward, and can lead agents to mindlessly exploring before finding any reward \cite{article_approx_optimal_approximate_reinforcement_learning}.
-%
-
 Reinforcement learning is a subset of machine learning where an agent learns to maximize a reward in an environment \cite{article_reinforcement_learning_survey}.
-These can range from solving simple mazes and puzzles, to complex real world environments such as driving a car.
+These can range from solving simple mazes and puzzles, to complex real world environments such as driving a car \cite{article_deep_learning_hybrid_quantum}.
 Environments consist of states, or points in time observed by the agent, and actions that the agent performs that takes it to the next state.
 The goal of the agent is to observe the current state and select an action that maximizes its long term reward.
 Agents do this by using a Q-Function, which converts a state-action pair into the expected future reward that we call the Q-Value.
@@ -65,20 +48,15 @@ Thus, Deep Q-Learning often takes a significant amount of time training in order
 
 This paper explores a potential improvement to training Deep Q-Learning models in environments that have a known end goal.
 This includes environments such as mazes or map navigation, where the goal is clear but the optimal path to reach it may not be.
-The proposed method is to start training the agent right next to the goal, so the model understands where it needs to go.
+Research has been done to explore kickstarting reinforcement learning agents with teacher agents \cite{article_kickstart_deep_reinforcement_learning}, taking a larger scale approach to modifying the learning method.
+The method presented in this paper instead seeks to change how the training data itself is generated.
+It starts by training the agent right next to the goal, so the model understands where it needs to go.
 Then, as the training continues, the agent is taken further and further away from the goal, giving enough time so that it can navigate its way back to the goal.
-The idea is that by showing the agent the goal first, it can 
+The idea is that by showing the agent the goal first, it avoids needing to initially explore to find the goal.
+In this paper, two agents are trained side by side on the same maze.
+One represents the standard implementation of reinforcement learning, while the other trains using this modified technique.
+The models are then analyzed by looking at their policy functions over time, taking note the progress each makes towards solving the maze.
 
-
-
-% % Project Details
-%
-% \paragraph{}
-% This paper explores a potential training improvement for deep reinforcement learning models in environments with large state space and a known goal.
-% The idea is that an agent learning to back-track its own steps is faster than exploring the whole environment.
-% First, the agent will be given a smaller state-space closer to the end-goal, and then expanded over time to allow the agent to learn the entire maze.
-% The agent will be trained alongsize control agent to compare the ability each agent has to solve the maze over their training time.
-% The data collected will be able to suggest whether this training strategy improves the training rate of the model.
 
 \section{Methods}
 
@@ -158,30 +136,30 @@ These data points are then stored in a CSV file after training is completed.
 To analyze the data, the CSV file is loaded into R \cite{lang_r} and aggregated using libraries included in the tidyverse \cite{lib_tidyverse} package.
 The visualizations shown in this paper are created using ggplot2 \cite{lib_ggplot2}.
 
-\section{Results (WIP)}
-
-
-NOTE: This section is WIP. To work on the Discussion page, I'm building an outline (using the data presented in the poster) to drive my discussion.
-
-\begin{itemize}
-	\item Both models tended to go all-or-nothing with one particular action
-	\item Over time, the models swapped the preferred action from two of the four possible actions. (Left and Right)
-\end{itemize}
-
-
-% talk about how the model typically started picking one move at a time after the first target update
-% How it only picked 2 moves to switch between
-
+\section{Results}
+%
+% \begin{itemize}
+% 	\item Both models tended to go all-or-nothing with one particular action
+% 	\item Over time, the models swapped the preferred action from two of the four possible actions. (Left and Right)
+% \end{itemize}
+%
+%
+% % talk about how the model typically started picking one move at a time after the first target update
+% % How it only picked 2 moves to switch between
 
 \begin{figure}[h]
-	\includesvg[width=\linewidth]{svg-graphs/graph_evaluation}
+	\begin{center}
+	\includesvg[width=0.8\linewidth]{svg-graphs/graph_evaluation}
+	\end{center}
     \caption{Model evaluation over time. Evaluation is calculated from the policy generated by the agent, represented as the percent of the maze that the policy successfully reaches the end from. Higher is Better.}
 		\label{fig:evaluation}
 \end{figure}
 
 \begin{figure}[h]
-	\includesvg[width=\linewidth]{svg-graphs/graph_directional}
-	\caption{Policy frequency of actions over time... TODO}
+	\begin{center}
+	\includesvg[width=0.8\linewidth]{svg-graphs/graph_directional}
+	\end{center}
+	\caption{Policy composition over time. The frequency of each individual action is tracked from the policies generated after each iteration. Higher or lower is not necessarily better, but rather it's expected that the optimal solution has a mixture of all actions depending on the maze itself. The vertical line at Iteration 100 indicates the point when the target network was updated with the Q-Network values.}
 	\label{fig:directional}
 \end{figure}
 
@@ -218,29 +196,23 @@ NOTE: This section is WIP. To work on the Discussion page, I'm building an outli
 \end{figure}
 
 
-% \subsection{Previous Results Draft}
-%
-% \paragraph{} 
-% The two models were trained on identical datasets.
-% In total, $10,000$ observations were recorded for each model. 
-% Each model was given the same observations and dataset, and trained in the same manner.
-%
-%
-% \paragraph{}
-% Figure \ref{fig:graphs} shows the model evaluation throughout the training.
-% The control model did not change it's policy at all, so it maintained a consistent Evaluation level.
-% The experimental model has two distinct properties.
-% First, it has signicicantly lower evaluations than the control model.
-% At no point during the training did the experimental model obtain a higher evaluation than the control model.
-% Second, the model shows an initial dip in it's evaluation during the first $500$ iterations.
-% Afterwards, it slowly climbs back up, but never higher than it had in the first few iterations.
-%
+Neither model substantially learned much during the training observed.
+Even when one step away from the goal, the agents had a difficult time learning that moving to the goal gives a high reward.
 
-\newpage
-(blank for results)
-\newpage
-(blank for results)
-\newpage
+Figure \ref{fig:evaluation} depicts the evaluation recorded after each iteration for both models.
+The graph shows both models following a downward trend in evaluation, indicating that the model performed worse towards the end of training than starting out.
+It should be noted that the range of points in the graph are from $0.105$ and $0.120$.
+Evaluation ranges from $0.00$ to $1.00$, so the range of $0.105$ and $0.120$ indicates that extremely little changed in the models.
+For most iterations during training, both models had an evaluation score of $0.00$.
+The values shown on the graph account for both those iterations, as well as the occasional iteration where the policy had a couple tiles where the policy led the agent towards the exit.
+
+The data pertaining to the frequency an action shows up in the policy tells a different story.
+Figure \ref{fig:directional} shows the trend of how often each action shows up in the policy.
+Both agents have very similar trends in the frequencies of different actions.
+Each agent often only selected one action as the best action, regardless of the current state.
+For example, at Iteration 80, the Control agent's policy stated that the agent should move left in every state, while the Experimental agent's policy stated that the agent should move right.
+
+
 
 \section{Discussion}
 

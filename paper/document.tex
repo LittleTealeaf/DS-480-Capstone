@@ -129,12 +129,6 @@ This is done so that the DQN isn't trying to train against a constantly updating
 
 The agent is implemented in Python \cite{lang_python}, and uses the TensorFlow \cite{lib_tensorflow} library to accelerate performance using an NVIDIA GPU.
 
-
-% \cite{lib_tensorflow}
-%
-% I will cite \cite{article_human_level_control_deep_reinforcement_learning}.
-
-
 \paragraph{Training} 
 The difference between the control model and the experimental model is down to the particular way of providing entries into the replay database.
 When the control model starts training, it's placed at the natural beginning of the environment, as it would if it were in many other common environments like video games \cite{article_reinforcement_learning_survey}.

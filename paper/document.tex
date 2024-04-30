@@ -137,6 +137,7 @@ To analyze the data, the CSV file is loaded into R \cite{lang_r} and aggregated 
 The visualizations shown in this paper are created using ggplot2 \cite{lib_ggplot2}.
 
 \section{Results}
+
 %
 % \begin{itemize}
 % 	\item Both models tended to go all-or-nothing with one particular action
@@ -162,7 +163,6 @@ The visualizations shown in this paper are created using ggplot2 \cite{lib_ggplo
 	\caption{Policy composition over time. The frequency of each individual action is tracked from the policies generated after each iteration. Higher or lower is not necessarily better, but rather it's expected that the optimal solution has a mixture of all actions depending on the maze itself. The vertical line at Iteration 100 indicates the point when the target network was updated with the Q-Network values.}
 	\label{fig:directional}
 \end{figure}
-
 
 \begin{figure}[h]
 	\begin{center}
@@ -209,8 +209,20 @@ The values shown on the graph account for both those iterations, as well as the 
 The data pertaining to the frequency an action shows up in the policy tells a different story.
 Figure \ref{fig:directional} shows the trend of how often each action shows up in the policy.
 Both agents have very similar trends in the frequencies of different actions.
-Each agent often only selected one action as the best action, regardless of the current state.
+Each agent often only selected one action as the preferred action, regardless of the current state.
 For example, at Iteration 80, the Control agent's policy stated that the agent should move left in every state, while the Experimental agent's policy stated that the agent should move right.
+The main difference between the models are the rate that they swapped the preferred action.
+Figure \ref{fig:directional} only shows a snippet to show the pattern, so it doesn't necessarily tell the story of how often these swaps occurred.
+The overall frequency of swaps that either network had throughout training was not necessarily significant enough of a difference between the agents.
+The only note is that the preferred action swaps more often after the target network is updated, allowing the variables to change significantly.
+
+Figure \ref{fig:policy} shows an example where the agent's policy changes from always going up to always going to the right.
+Starting in Figure \ref{fig:policy_350}, which depicts the policy at iteration 350, the agent prefers to always take the up action.
+However, in iteration 400, shown in Figure \ref{fig:policy_400}, the policy consists of a seemingly random mix of either taking the up or right action.
+Then in iteration 450 and 500, shown in Figures \ref{fig:policy_450} and \ref{fig:policy_500} respectively.
+
+
+
 
 
 

@@ -24,6 +24,12 @@
 
 \section{Abstract}
 
+Deep Q-Learning utilizes the unique properties of neural networks to apply Q-Learning to larger environments.
+However, one of the drawbacks of using neural networks is that a significant amount of data is required for the model to learn.
+This paper attempts to explore modifications that could be made to the reinforcement learning method in environments with known goals.
+The modification involves starting the agent closer to the goal and slowly expanding its knowledge of the environment.
+While no definitive results were drawn, several insights are gained, such as the importance of avoiding letting the agent overfit on environments.
+
 \section{Introduction}
 
 Reinforcement learning is a subset of machine learning where an agent learns to maximize a reward in an environment \cite{article_reinforcement_learning_survey}.
@@ -59,29 +65,57 @@ The models are then analyzed by looking at their policy functions over time, tak
 
 \paragraph{Environment}
 
-In this project, the task of the agent is to explore a simple maze.
-The maze is stored in a 2-dimensional array consisting of empty spaces and walls, generated using the Python \cite{lang_python} library MazeLib \cite{lib_mazelib}.
-A wrapper class is created to manage the initial randomization seed, current location, reward function, and observational output.
+The goal of this project is to focus on the training method, not necessarily to care about the problem it's solving.
+Thus, any environment that fulfils the requirements will suffice.
+For this project, the environment chosen was to explore and solve a simple maze.
 
-Throughout training, the same maze is used to keep it simpler.
-For this reason, the state vector used as input for the model only needs to describe the agent's current location.
-This will be done by providing both the $x$ and $y$ coordinate of the agent with $n + m$ variables, where $n$ is the width and $m$ is the height.
-The location will be represented by setting the corresponding $x$ and $y$ variables to $1$, and leaving the rest as $0$.
-For example, the dimensions of the maze used in this paper is $9x9$.
-Thus, the state vector consists of $18$ variables; $9$ to specify the $x$ position, and $9$ to specify the $y$ position.
+The environment is built around mazes generated using the Python \cite{lang_python} llibrary MazeLib \cite{lib_mazelib}.
+Mazes are created using MazeLib's Prims algorithm.
+MazeLib stores mazes as a 2 dimensional array of 1s and 0s.
+1s indicate walls and 0s indicates empty spaces that the agent can navigate through.
+Additionally, MazeLib generates a start and exit square.
+The exit square is used as the goal, and the start square is used as the start.
 
-In order to direct the agent towards the goal, a reward function is used that associates the current position with some reward value.
-For this project, the reward function will scale based on how far away the agent is from the goal.
-When the agent is at the goal, it will obtain a reward of $1$. When it is further away from the goal, it receives a reward close to $0$.
-The implementation used for this project uses the manhattan distance to calculate the reward.
-It uses the following formula, where $\text{dist}$ is the manhattan distance from the agent to the goal, and $\text{max dist}$ is the maximum distance possible in the maze, or the maze's $\text{height} + \text{width}$.
+The environment wrapper class is built to provide helper functions for use by the agent.
+First, it store the current location of the agent.
+It also provides methods for the agent to use to move, which will not allow the agent to move if it attempts to move into a wall.
+At every state, the agent can pick one of four moves: up, down, left, or right.
+Up reduces the $y$ coordinate by 1, Down increases the $y$ coordinate by 1, Right increases the $x$ coordinate by 1, and Left decreases the $x$ coordinate by 1.
+Lastly, it provides a method to convert the current state into a vector in order to feed into the neural network.
+
+In order to keep training even simpler, the same maze is used throughout the entire process.
+Because we aren't trying to make the agent solve any maze, we don't need to necessarily provide the current setup of the maze.
+The source code, however, does implement methods to include the current state if needed.
+Therefore, the only information the agent needs to know is the ccurrent location.
+The location is provided as several variables, repeated for both the $x$ and $y$ coordinates.
+Since the dimensions of the maze are known, and in this instances relatively small, the coordinate is treated as a categorical variable.
+That is, there are $h + w$ values in the output tensor, where $h$ is the height and $w$ is the width.
+For example, the dimensions used for the maze in this paper is $9x9$.
+Thus, the form is as follows. The variables are equal to $1$ if the condition is true, and $0$ otherwise.
+
+$$\left [ x = 1 , x = 2 , x = 3 , x = 4 , \hdots , y = 5 , y = 6 , y = 7 , y = 8 \right]$$
+
+Say the model is at the point ($3$, $5$), the vector would be as follows.
+
+$$ \left[ 0,0,0,1,0,0,0,0,0,0,0,0,0,0,1,0,0,0 \right]$$
+
+While the position could be conveyed in less variables, making the position into a categorical-like variable helps the neural network easily differentiate between the positions.
+
+
+In order to teach the agent where the goal is, the environment needs a reward function that relates the current state to some corresponding immediate reward.
+A simple implementation of this is to set the reward to 1 if the agent is at the goal, and 0 otherwise.
+However, to give the agent some better context to know when it's getting better, similar to the warmer-colder game, a scaling reward also works.
+The reward used in this paper scales from $1$ when it's at the goal, and $0$ when it's furthest away from the goal.
+Specifically, the manhattan distance is compared to the maximum manhattan distance possible in the maze.
+The reward uses the following formula, where dist is the current manhattan distance from the agent to the goal, and max dist is the maximum distance possible, which is $\text{height} + \text{width}$.
 
 $$\text{Reward} = \frac{(\text{max dist} - \text{dist}) ^ 2}{\text{max dist}^2}$$
 
-This reward function results in an exponential drop in reward when the agent moves away from the goal, but keeps the reward inbetween the bounds of $0$ to $1$.
-
+The exponents in this function can be scaled to control how far of a drop off there is as you move away from the goal.
+This is done in order to prevent a consistent small increase in reward as the agent steps towards the goal, but rather an exponential increase to incentivize the agent to get towards the goal faster.
 
 \paragraph{Agent}
+
 The agent used in this project is a very simple implementation of a Deep Q-Learning agent.
 Deep Q-Learning is an extension of Q-Learning, which teaches agents how to optimally perfor in a Markovian Decision Tree \cite{article_q_learning}.
 Q-Learning uses a Q-Function, typically as a table, to track the expected utilities of being in some state and taking some action.
@@ -114,7 +148,6 @@ The experimental model takes a different approach and starts close to the goal.
 At first, the agent is placed right next to the goal, where it can easily figure out where it needs to go.
 Throughout training, the agent is slowly placed further and further away from the goal.
 This is done slow enough so the agent can reacquaint itself and remember where the goal is.
-
 
 \paragraph{Policy Evaluation}
 
@@ -267,42 +300,6 @@ When the target network is updated, the weights and biases in the Q-Network don'
 Therefore, we can modify the network to something of our choosing right after updating the target network.
 This could either be by squishing all of the weights and biases to be within a given range, or by providing a completely new randomly generated network.
 However, this adds some randomness to the training method, so there is a chance that the agent takes steps backwards during training.
-
-
-
-% Overview of the Results
-% - Discussing how the model liked to pick one particular move
-% - That particular move tended to switch up between one of two moves
-% 
-% Interpretation of the results
-% - Model must have had high expected utilities for the move that got the agent to the solution in the beginning
-% - Even when the target updated, the model still believed that taking that move would result in higher expected utility
-% - 
-
-% Bring up sources in introduction**
-
-% 15-20 pages (not including title page or referenes)
-% OH BOY
-% Include code in project
-% GitHub Link 
-
-
-% For example, the experimental state is first fed states right next to the goal, making the replay database consist of just one state.
-% This leads the model to learn that taking one particular action results in obtaining the max reward for being in the goal.
-% However, as the model is given newer states slightly further from the goal, the replay network is still filled with a significant portion of that one state.
-% As this continues, the expected utility of taking that action is stuck in a feedback loop that keeps increasing it.
-% After some point, the replay is filled with another specific action that also, for some reason, has a high expected utility.
-
-
-
-
-
-
-
-
-
-
-
 
 \newpage
 \bibliographystyle{ieeetr}

@@ -59,9 +59,7 @@ In this paper, two agents are trained side by side on the same maze.
 One represents the standard implementation of reinforcement learning, while the other trains using this modified technique.
 The models are then analyzed by looking at their policy functions over time, taking note the progress each makes towards solving the maze.
 
-
 \section{Methods}
-
 
 \paragraph{Environment}
 
@@ -219,7 +217,6 @@ The visualizations shown in this paper are created using ggplot2 \cite{lib_ggplo
 	\label{fig:policy}
 \end{figure}
 
-
 Neither model substantially learned much during the training observed.
 Even when one step away from the goal, the agents had a difficult time learning that moving to the goal gives a high reward.
 
@@ -244,8 +241,6 @@ Figure \ref{fig:policy} shows an example where the agent's policy changes from a
 Starting in Figure \ref{fig:policy_350}, which depicts the policy at iteration 350, the agent prefers to always take the up action.
 However, in iteration 400, shown in Figure \ref{fig:policy_400}, the policy consists of a seemingly random mix of either taking the up or right action.
 Then in iteration 450 and 500, shown in Figures \ref{fig:policy_450} and \ref{fig:policy_500} respectively, the policy prefers the right action.
-
-
 
 \section{Discussion}
 

@@ -99,7 +99,6 @@ $$\left[0,0,0,1,0,0,0,0,0,0,0,0,0,0,1,0,0,0\right]$$
 
 While the position could be conveyed in less variables, making the position into a categorical-like variable helps the neural network easily differentiate between the positions.
 
-
 In order to teach the agent where the goal is, the environment needs a reward function that relates the current state to some corresponding immediate reward.
 A simple implementation of this is to set the reward to 1 if the agent is at the goal, and 0 otherwise.
 However, to give the agent some better context to know when it's getting better, similar to the warmer-colder game, a scaling reward also works.
@@ -112,28 +111,83 @@ $$\text{Reward} = \frac{(\text{max dist} - \text{dist}) ^ 2}{\text{max dist}^2}$
 The exponents in this function can be scaled to control how far of a drop off there is as you move away from the goal.
 This is done in order to prevent a consistent small increase in reward as the agent steps towards the goal, but rather an exponential increase to incentivize the agent to get towards the goal faster.
 
-\paragraph{Agent}
+\paragraph{Deep Q-Learning Agent}
 
-The agent used in this project is a very simple implementation of a Deep Q-Learning agent.
-Deep Q-Learning is an extension of Q-Learning, which teaches agents how to optimally perfor in a Markovian Decision Tree \cite{article_q_learning}.
-Q-Learning uses a Q-Function, typically as a table, to track the expected utilities of being in some state and taking some action.
-For example, the function or table would return a high expected utility if the state was right next to the goal and the action took the agent to that goal.
+The agent used in this project implements a basic version of Deep Q-Learning.
+Deep Q-Learning is an extension of Q-Learning, which teaches agents how to optimally perform in a markovian decision tree \cite{article_q_learning}.
 
-In Q-Learning, the agent explores the environment and gathers observations of states and actions into a replay experience \cite{article_reinforcement_learning_for_robots}.
-This replay experience is then used to train and update the expected utility for the given state-action pairs.
-In doing this, the model will over time be able to accurately predict the expected utility of every state-action pair.
-The policy can then be created by going through each state and picking the action with the highest expected utility from that state.
+The difference between Deep Q-Learning and Q-Learning is the use of a neural network to approximate the Q-Function \cite{article_human_level_control_deep_reinforcement_learning}.
+The Q-Function's purpose is to take state-action pairs and return the expected utility, or long-term reward, obtained from taking that action from that state.
+In order to simplify and remove the need to run the Q-Network for each state-action pairs, we can modify it to accept the current state and have an output node for each action \cite{article_reinforcement_learning_survey}.
+Thus, by inputting the current state, the neural network outputs the expected utility of each possible action.
+The only caveat with this setup is that the model will provide an expected utility for an action, even if it isn't possible in the environment.
+In the environment used for this paper, if the agent tries to make a move that takes it into a wall, the agent just doens't move and it's taken from there.
 
-Deep Q-Learning extends Q-Learning by using a neural network to approximate the Q-Function \cite{article_human_level_control_deep_reinforcement_learning}.
-The neural network used in such a way is called the DQN, or Deep Q-Network.
-To reduce the number of times it needs to be run, the DQN accepts the current state as the input, and a distinct output for each of the possible actions \cite{article_reinforcement_learning_survey}.
-The goal of training the DQN is to make each of the distinct outputs equal the expected utility of taking that action from the inputted state.
+During the first part of Deep Q-Learning, the agent is placed in the environment.
+The agent is given the state it is in, where it is fed into the Q-Network.
+By some random $\varepsilon$ chance, the agent either picks the action with the highest predicted expected utility, or selects a random action.
+In this paper, $\varepsilon$ was decided by the following equation:
 
-In order to improve the stability of training, a target network is used to estimate the future reward \cite{article_human_level_control_deep_reinforcement_learning}.
-The target network is simply a copy of the DQN, but it only gets updated after a certain number of training cycles.
-This is done so that the DQN isn't trying to train against a constantly updating version of itself, but rather a previous version of itself.
+$$\varepsilon = 0.6 * 0.99^{\text{iter} \% 100} + 0.4$$
 
-The agent is implemented in Python \cite{lang_python}, and uses the TensorFlow \cite{lib_tensorflow} library to accelerate performance using an NVIDIA GPU.
+
+
+
+%
+% The agent used in this project is a basic implementation of Deep Q-Learning.
+%
+%
+% During the first part of Deep Q-Learning, the agent is let loose in the environment.
+% The agent starts in some state within the environment and feeds it into the Q-Network.
+% Then, the agent either selects the action with the highest expected utility, or a random move.
+% The cycle repeats for a number of iterations, or until the agent completes the task.
+% Throughout this cycle, the agent gathers entries containing the state, action, resulting state, and immediate reward into what's called a replay database \cite{article_reinforcement_learning_for_robots}.
+%
+% Deep Q-Learning also makes the modification of adding a target network \cite{article_reinforcement_learning_survey}.
+% The target is a neural network that is nearly identical to the Q-Network.
+% In fact, after a number of training iterations, the weights and biases of the Q-Network are copied to the target network.
+% The goal of the target network is to stabilize the training of the Q-Network by providing a consistent target to train against \cite{article_reinforcement_learning_survey}.
+%
+% $$Q(s)_a \leftarrow R(s') + \gamma \max(T(s'))$$
+%
+% When the Q-Network trains on the replay database, it is trying to make the output of the Q-Network equal to the immediate reward plus the target network's expected utility of the resulting state, scaled by some factor, $\gamma$.
+% In other words, that the goal is for the Q-Function to perfectly predict the expected utility of the target network and the immediate reward of the new state. \cite{article_reinforcement_learning_survey}
+
+
+
+% The purpose of the target network is to stabilize the training of the Q-Network.
+% The target network acts as a "target" for the Q-Network to train towards.
+
+
+
+% To simplify the process, the neural network is modified to only accept the state as the input, and has an output node for every action.
+% % This reduces the need to re-run the neural network for every action from a state, while still obtaining the same results \cite{article_reinforcement_learning_survey}.
+
+
+
+% The agent used in this projecct is a simple implementation of a Deep Q-Learning agent.
+% Deep Q-Learning is an extension of Q-Learning, which teaches agents how to optimally perform in a markovian decision tree \cite{article_q_learning}.
+
+% The agent used in this project is a very simple implementation of a Deep Q-Learning agent.
+% Deep Q-Learning is an extension of Q-Learning, which teaches agents how to optimally perfor in a Markovian Decision Tree \cite{article_q_learning}.
+% Q-Learning uses a Q-Function, typically as a table, to track the expected utilities of being in some state and taking some action.
+% For example, the function or table would return a high expected utility if the state was right next to the goal and the action took the agent to that goal.
+%
+% In Q-Learning, the agent explores the environment and gathers observations of states and actions into a replay experience \cite{article_reinforcement_learning_for_robots}.
+% This replay experience is then used to train and update the expected utility for the given state-action pairs.
+% In doing this, the model will over time be able to accurately predict the expected utility of every state-action pair.
+% The policy can then be created by going through each state and picking the action with the highest expected utility from that state.
+%
+% Deep Q-Learning extends Q-Learning by using a neural network to approximate the Q-Function \cite{article_human_level_control_deep_reinforcement_learning}.
+% The neural network used in such a way is called the DQN, or Deep Q-Network.
+% To reduce the number of times it needs to be run, the DQN accepts the current state as the input, and a distinct output for each of the possible actions \cite{article_reinforcement_learning_survey}.
+% The goal of training the DQN is to make each of the distinct outputs equal the expected utility of taking that action from the inputted state.
+%
+% In order to improve the stability of training, a target network is used to estimate the future reward \cite{article_human_level_control_deep_reinforcement_learning}.
+% The target network is simply a copy of the DQN, but it only gets updated after a certain number of training cycles.
+% This is done so that the DQN isn't trying to train against a constantly updating version of itself, but rather a previous version of itself.
+%
+% The agent is implemented in Python \cite{lang_python}, and uses the TensorFlow \cite{lib_tensorflow} library to accelerate performance using an NVIDIA GPU.
 
 % TODO: fix
 

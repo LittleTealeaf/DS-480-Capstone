@@ -33,7 +33,7 @@ While no definitive results were drawn, several insights are gained, such as the
 \section{Introduction}
 
 Reinforcement learning is a subset of machine learning where an agent learns to maximize a reward in some environment \cite{article_reinforcement_learning_survey}.
-These can range from solving simple mazes and puzzles, to complex real world environments such as drving a car or controlling a robotic arm through complex tasks \cite{article_deep_learning_hybrid_quantum}.
+These can range from solving simple mazes and puzzles, to complex real world environments such as driving a car or controlling a robotic arm through complex tasks \cite{article_deep_learning_hybrid_quantum}.
 The idea of reinforcement learning is nothing new, as popularity started to rise back in the 1990s among the machine learning and artificial intelligence communities \cite{article_reinforcement_learning_survey}.
 However, reinforcement learning is still ever-growing, as much of it is limited by the technology and capabilities of modern machines to run these algorithms.
 
@@ -66,7 +66,7 @@ Even better learning algorithms, such as conjugate gradient, were found to have 
 In Deep Q-Learning, the ability to overfit on the data brings up several questions about how to set up the process.
 For example, if an agent is presented with the same set of data repeatedly, it will tend to be more accurate with that data versus the states it's rarely been in.
 In this paper, we are not trying to build a model that generalizes against all mazes.
-However, it is important to understand that overfitting is a significant issue that needs to be addressed in agents that are inteded to solve a more complicated problem.
+However, it is important to understand that overfitting is a significant issue that needs to be addressed in agents that are intended to solve a more complicated problem.
 
 A paper by Volodymyr Mnih that looks into more human-level control successfully attempts to create a model that is generalized to multiple different video games at the same time \cite{article_human_level_control_deep_reinforcement_learning}.
 The paper takes a large convolutional neural network to accept the generalized inputs of the screen, and output the direct inputs to the control interface.
@@ -160,7 +160,8 @@ In the environment used for this paper, if the agent tries to make a move that t
 
 During the first part of Deep Q-Learning, the agent is placed in the environment.
 The agent is given the state it is in, where it is fed into the Q-Network.
-By some random $\varepsilon$ chance, the agent either picks the action with the highest predicted expected utility, or selects a random action \cite{article_reinforcement_learning_survey}.
+With a probability of $\varepsilon$, the agent selects a random action, else it chooses the action with the highest predicted expected utility \cite{article_reinforcement_learning_survey}.
+% By some random $\varepsilon$ chance, the agent either picks the action with the highest predicted expected utility, or selects a random action \cite{article_reinforcement_learning_survey}.
 In this paper, $\varepsilon$ was decided by the following equation:
 
 $$\varepsilon = 0.6 * 0.99^{\text{iter} \% 100} + 0.4$$
@@ -322,35 +323,38 @@ Then in iteration 450 and 500, shown in Figures \ref{fig:policy_450} and \ref{fi
 
 The results conclude that neither model learned how to solve the maze in any capacity.
 There could be several initial factors that may lead to these inconclusive results.
-Most obviously, the agents may need significantly longer than 20,000 iterations to learn anything.
+First, and more obviously, the agents may need significantly longer than 20,000 iterations to learn anything.
+This is debatable, since results were found in the Kick-Starter paper after only 5,000 iterations \cite{article_kickstart_deep_reinforcement_learning}.
+However, by the nature of neural networks, the convergence rate is highly unpredictable based on the complexity of the pattern it needs to approximate.
 The number 20,000 was arbitrarily picked with the hopes that it struck a balance between a large enough training duration to capture the agents learning, while being small enough to be able to run within a reasonable amount of time.
-Additionally, it is likely that some key points of reinforcement learning were not correctly implemented.
+Additionally, it is highly likely that some other part of the experiment was flawed, causing some model inefficiencies or outright bugs.
 However, there is enough information that may give us hints as to the effectiveness of using the proposed training method.
 
 The results from Figure \ref{fig:evaluation} can be misleading.
 Some of this has to do with the method of generating the evaluation scores.
-In this paper, a breadth-first search algorithm was implemented to start at the goal and find all tiles that the policy would lead to the goal.
+In this paper, a breadth-first search algorithm was implemented to start at the goal and find all states that the policy would lead to the goal.
 While this does work effectively, it doesn't account for changes behind an incorrect move.
 Take Figure \ref{fig:policy_400} for example.
 The evaluation function would indicate that exaclty one tile will lead the agent to the goal when following the policy, which is the tile right next to the goal.
 Thus, the evaluation would be $\frac{1}{31}$, or roughly $0.032$.
-However, let's say that we change every value, except for the top row, to have the correct action choice.
-Even though the policy itself is still technically the same, the resulting evaluation is still $0.032$, since it only sees the one state that moves the agent into the goal.
+However, let's say that we change every value, except for the top row, to have the correct action choice that would solve the maze.
+Even though the policy itself is technically significantly closer to the desired policy, the resulting evaluation is still $0.032$, since it only sees the one state that moves the agent into the goal.
 A more realistic evaluation would be comparing the agent's current policy to some known optimal policy.
-The only issue is that this method of evaluating the convergence of the agent to the optimal policy requires that we \textit{know} the optimal policy.
+The only issue is that this method of evaluating the convergence of the agent to the optimal policy requires that the optimal policy is known.
 Thus, it can only really apply towards environments that are used for testing, and can't necessarily be used in evaluating the training of a model without a known optimal policy.
 While this doesn't indicate whether or not the experimental method of training a Deep Q-Learning model, it does indicate that the results, mainly in Figure \ref{fig:evaluation}, do not tell the full story of the acccuracy of the model.
 
 One of the biggest key points in both Figure \ref{fig:directional} and Figure \ref{fig:policy} was the tendency for the agent to prefer one action regardless of position.
-Additionally, throughout training the model tends to switch between the different actions, never stabilizing on a policy with a combination of actions.
+Throughout training, the model tends to switch between the different actions, never stabilizing on a policy with a combination of actions.
 This seems to indicate that some form of overfitting is presenting itself in the model.
 That is, the weights corresponding to one action in the output nodes of the Q-Network may have significantly higher values than the other output nodes, drowning out the current state's effect on the output.
+In other words, no combination of the inputs allows for other actions to have a higher predicted value than the current preferred aciton.
 Previous research has found that reinforcement learning agents that are trained on only one environment will overfit to that environment, making several assumptions that may not carry over to other environments \cite{article_overfitting_neural_networks}.
 This means that agents trained in one environment will perform significantly worse in a different environment that may have a different structure or setup.
-Take the example of this paper and mazes. In order to better analyze the changes in policy, a single maze was created for the agent to explore.
-However, placing the agent in a different maze with the exact same setup will perform signficantly worse, as the agent would not understand that where there might be walls in one maze there are now paths the agent needs to take.
+Take the example of the mazes in this paper. In order to better analyze the changes in policy, a single maze was created for the agent to explore.
+However, placing the agent in a different maze with the exact same setup will perform signficantly worse, as the agent would not understand that where there might be walls in one maze there are now paths in the other maze that the agent needs to take.
 
-Similarly, this may be the case of the experiment training method.
+Similarly, this may be the case within the experiment training method.
 First, the agent is given a sub-space of the large environment.
 That is, the agent is only given states closer to the goals.
 The agent then might over-fit on those states, which may initially make one direction significantly more appealing than the rest.
@@ -358,19 +362,28 @@ Therefore, the weights associated with that move are increasingly higher than th
 Then, as the model is brought out to new states in the environment, it may still believe that it's in that smaller sub-space of the whole environment.
 The issue is that the actions preferred within the sub-space have significantly higher weights than the other actions, making it hard to change the policy for only one state without changing the rest of the states.
 This challenges the idea that the model would converge faster to the optimal strategy when shown the goal first.
-When the model overfits near the goal, it has a significantly harder time working with the rest of the environment.
+When the model overfits near the goal, it has a significantly harder time working in the rest of the environment.
 However, the question still remains on the root cause of this observation, since this overfitting seems to be affecting both the experiemntal method and the control method, which doesn't have the same explanation for its overfitting.
 It could be several factors, ranging from the design of the neural network itself, to the configuration of learning rates and training sizes.
-Regardless, it brings up a question about how to navigate the overfitting problem with an agent starting within a smaller sub-space of the environment.
+Regardless, this brings up the question about how to navigate the overfitting problem with an agent starting within a smaller sub-space of the environment.
 
 There are some potential solutions that could be implemented to navigate this potential issue.
-In Deep Q-Learning, the goal of the Q-Network is to approximate the function that converts state-action pairs to expected utilities \cite{article_reinforcement_learning_survey}.
-Intermittently, the target network is updated with the weights of the Q-Network.
-The goal of the target network is to store the expected utilities of looking one more step ahead.
 When the target network is updated, the weights and biases in the Q-Network don't matter as much, since they need to be trained against a new target.
-Therefore, we can modify the network to something of our choosing right after updating the target network.
+Therefore, we can modify the network right after updating the target network without drastically changing the result, since it already needs to converge to some new pattern/configuration.
 This could either be by squishing all of the weights and biases to be within a given range, or by providing a completely new randomly generated network.
-However, this adds some randomness to the training method, so there is a chance that the agent takes steps backwards during training.
+However, this may add some randomness to the training method, so there is a chance that the agent takes steps backwards during training.
+
+Further research could also seek to combine this method with the kick-starting process \cite{article_kickstart_deep_reinforcement_learning}.
+That is, a process such as the one presented in this paper could be used as rough `teacher' for a more sophisticated model.
+This would mean that the student would be able to observe the teacher's knowledge of where the goal is, and learn from there.
+Once again, this would only apply to environments where the assumptions made in this paper hold, but it could drastically improve the ability to quickly build teacher agents.
+
+In conclusion, we cannot say whether or not the method discussed in this paper is effective or ineffective.
+Rather, we can note that it is a lot more complicated than it may seem.
+Future work could perhaps take some steps back to observe if this method can be used with a more typical Q-Function, such as a simple table.
+This would be possible given the small size of the environment used in this paper.
+Additionally, perhaps a more complicated environment that still holds the assumptions presented in this paper could be found to give the agent a challenge.
+The only limiting factor of this is the duration of time that the agents could be allowed to train and collect data from.
 
 \newpage
 \bibliographystyle{ieeetr}

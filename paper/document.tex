@@ -24,11 +24,15 @@
 
 \section{Abstract}
 
-Deep Q-Learning utilizes the unique properties of neural networks to apply Q-Learning to larger environments.
-However, one of the drawbacks of using neural networks is that a significant amount of data is required for the model to learn. 
-This paper attempts to explore modifications that could be made to the reinforcement learning method in environments with known goals.
-The modification involves starting the agent closer to the goal and slowly expanding its knowledge of the environment.
-While no definitive results were drawn, several insights are gained, such as the importance of avoiding letting the agent overfit on environments.
+Reinforcement learning, a subset of machine learning, aims to train an agent to perform some long-term goal in an environment.
+The basic implementation of Q-Learning works well for small environments, but once the environment size gets larger, it can quickly become infeasable to apply.
+Thus, Deep Q-Learning uses neural networks to approximate methods witin Q-Learning, allowing the ability for much more complex environments.
+However, Deep Q-Learning requires significantly more data and time in order to train.
+In this paper, a modified reinforcement learning method is presented as a potential way to expidite training in environments that follow specific assumptions.
+In simple terms, the process starts the agent's training next to the goal to give it immediate reward, and slowly moves it back out to introduce it to the rest of the environment.
+The results presented in this paper are not conclusive, and can neither state that the method is better or worse.
+However, some insights into the collected data indicate that a form of overfitting is showing up, potentially caused by the proposed method.
+This paper concludes that additional research and experimentation with simpler models might be able to demonstrate the effectiveness of this method better.
 
 \section{Introduction}
 

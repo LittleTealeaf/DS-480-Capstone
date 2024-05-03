@@ -52,14 +52,12 @@ Q-Learning consists of a Q-Function, which accepts a state and an action and ret
 The Q-Value is typically a discounted expected reward, in order to incentivize shorter solutions in an environment where multiple solutions are possible.
 The goal during training is to train the agent to accurately predict the Q-Value.
 This paper takes the basics presented in this survey as the baseline for the agents.
-% TODO: Talk about neural network?
 
 Kick-starting reinforcement learning agents allows for better data-efficiency and convergence time \cite{article_kickstart_deep_reinforcement_learning}.
 This is done through the use of a `parent' agent, which the student is then trained against to improve its own reward functions.
 By using knowledge gained from one or multiple teacher agents, a student agent is able to maximize expected reward significantly faster.
 However, this method only considers reinforcement learning situations where pre-trained models already exist.
 This assumption is not one that is assumed to be true in the research done in this paper.
-% TODO: Talk about using kickstarted agents using this experimental strategy
 Therefore, the use of kick-starting algorithms has little to no use in this paper.
 However, insights gained from this paper may influence the ability to create `teacher' agents.
 

@@ -25,39 +25,74 @@
 \section{Abstract}
 
 Deep Q-Learning utilizes the unique properties of neural networks to apply Q-Learning to larger environments.
-However, one of the drawbacks of using neural networks is that a significant amount of data is required for the model to learn.
+However, one of the drawbacks of using neural networks is that a significant amount of data is required for the model to learn. 
 This paper attempts to explore modifications that could be made to the reinforcement learning method in environments with known goals.
 The modification involves starting the agent closer to the goal and slowly expanding its knowledge of the environment.
 While no definitive results were drawn, several insights are gained, such as the importance of avoiding letting the agent overfit on environments.
 
 \section{Introduction}
 
-Reinforcement learning is a subset of machine learning where an agent learns to maximize a reward in an environment \cite{article_reinforcement_learning_survey}.
-These can range from solving simple mazes and puzzles, to complex real world environments such as driving a car \cite{article_deep_learning_hybrid_quantum}.
-Environments consist of states, or points in time observed by the agent, and actions that the agent performs that takes it to the next state.
-The goal of the agent is to observe the current state and select an action that maximizes its long term reward.
-Agents do this by using a Q-Function, which converts a state-action pair into the expected future reward that we call the Q-Value.
-In simpler implementations, this is done with a simple table-map, where the key is the state-action pair and the value is the Q-Value.
-During training, the Q-Values are incrementally updated until it accurately models the environment.
-A policy, or the mapping from states to selected actions, can then be created from the Q-Function by visiting every state and selecting the action with the highest Q-Value.
+Reinforcement learning is a subset of machine learning where an agent learns to maximize a reward in some environment \cite{article_reinforcement_learning_survey}.
+These can range from solving simple mazes and puzzles, to complex real world environments such as drving a car or controlling a robotic arm through complex tasks \cite{article_deep_learning_hybrid_quantum}.
+The idea of reinforcement learning is nothing new, as popularity started to rise back in the 1990s among the machine learning and artificial intelligence communities \cite{article_reinforcement_learning_survey}.
+However, reinforcement learning is still ever-growing, as much of it is limited by the technology and capabilities of modern machines to run these algorithms.
 
-Not all environments can simply list out all possible states, which is a critical requirement when implementing the Q-Function with a table.
-That is, it's infeasable to visit each state and pick out the best action to take.
-In order to use reinforcement learning to solve these types of environments, neural networks are used to approximate the Q-Function \cite{article_reinforcement_learning_for_robots}.
-This is called Deep Q-Learing, as it requires a large amount of data in order to generalize the results to best approximate the Q-Function, alternatively called the Q-Network.
-Whereas using a table allows weights to be updated for individual states and actions as the model progresses, the Q-Network needs to generalize the patterns of the whole environment.
-Thus, Deep Q-Learning often takes a significant amount of time training in order to optimize the agent to maximize long term reward.
+Leslie Kaelbling defines reinforcement learning as the method of an agent learning behaviors through trial and error \cite{article_reinforcement_learning_survey}.
+The agent interacts with the environment by observing the state through some perception, and specifies the action that the agent wishes to take.
+During each interaction, the agent reads the environment through the percieved values.
+Then, the agent either explores by selecting a random action, or exploits its knowledge by picking the action it likes the best.
+After taking that action, the agent receives some scalar reward to reward good behavior and punish bad behavior.
+Once enough interactions happen, the agent is then able to review the actions it took and learn from them.
+Kaelbling discusses several different strategies that can be used to implement reinforcement learning, one of the simpler to implement being Q-Learning.
+Q-Learning consists of a Q-Function, which accepts a state and an action and returns a Q-Value, or the expected future reward for taking that action from that state.
+The Q-Value is typically a discounted expected reward, in order to incentivize shorter solutions in an environment where multiple solutions are possible.
+The goal during training is to train the agent to accurately predict the Q-Value.
+This paper takes the basics presented in this survey as the baseline for the agents.
+% TODO: Talk about neural network?
 
-This paper explores a potential improvement to training Deep Q-Learning models in environments that have a known end goal.
-This includes environments such as mazes or map navigation, where the goal is clear but the optimal path to reach it may not be.
-Research has been done to explore kickstarting reinforcement learning agents with teacher agents \cite{article_kickstart_deep_reinforcement_learning}, taking a larger scale approach to modifying the learning method.
-The method presented in this paper instead seeks to change how the training data itself is generated.
-It starts by training the agent right next to the goal, so the model understands where it needs to go.
-Then, as the training continues, the agent is taken further and further away from the goal, giving enough time so that it can navigate its way back to the goal.
-The idea is that by showing the agent the goal first, it avoids needing to initially explore to find the goal.
-In this paper, two agents are trained side by side on the same maze.
-One represents the standard implementation of reinforcement learning, while the other trains using this modified technique.
-The models are then analyzed by looking at their policy functions over time, taking note the progress each makes towards solving the maze.
+Kick-starting reinforcement learning agents allows for better data-efficiency and convergence time \cite{article_kickstart_deep_reinforcement_learning}.
+This is done through the use of a `parent' agent, which the student is then trained against to improve its own reward functions.
+By using knowledge gained from one or multiple teacher agents, a student agent is able to maximize expected reward significantly faster.
+However, this method only considers reinforcement learning situations where pre-trained models already exist.
+This assumption is not one that is assumed to be true in the research done in this paper.
+% TODO: Talk about using kickstarted agents using this experimental strategy
+Therefore, the use of kick-starting algorithms has little to no use in this paper.
+However, insights gained from this paper may influence the ability to create `teacher' agents.
+
+The issue of overfitting found in many other forms of statistical models also apply to neural networks \cite{article_overfitting_neural_networks}.
+Research into the potential of overfitting with neural networks show that the ability to overfit is drastically different than other models.
+Neural networks are far more complex, and thus have several other potential areas of overfitting.
+Even better learning algorithms, such as conjugate gradient, were found to have worse abilities to generalize patterns.
+In Deep Q-Learning, the ability to overfit on the data brings up several questions about how to set up the process.
+For example, if an agent is presented with the same set of data repeatedly, it will tend to be more accurate with that data versus the states it's rarely been in.
+In this paper, we are not trying to build a model that generalizes against all mazes.
+However, it is important to understand that overfitting is a significant issue that needs to be addressed in agents that are inteded to solve a more complicated problem.
+
+A paper by Volodymyr Mnih that looks into more human-level control successfully attempts to create a model that is generalized to multiple different video games at the same time \cite{article_human_level_control_deep_reinforcement_learning}.
+The paper takes a large convolutional neural network to accept the generalized inputs of the screen, and output the direct inputs to the control interface.
+They found that the model significantly out-performed previous algorithms, nearing the performance level of a professiional human.
+The significance of the research in this paper is that it demonstrates the ability for Deep Q-Learning agents to generalize over multiple different environments at the same time, even if those environments have different rulesets.
+This is significant for this paper because the experimental methods described in this paper start training the model on a smaller sub-sample of the environment state-space.
+Mnih's paper indicates that even when the agent is trained on an isolated sample space at the same time, it is still possible for the agent to remember previous smaller sample spaces, such as other games, while learning new patterns in newly introduced sub-spaces.
+
+This paper seeks to explore the possibility of improving convergence rate in an environment that is known.
+There are two assumptions that this paper requires of the environment for this experimental methods to work.
+First, this process assumes that the agent can be manually placed in any state of the environment.
+This means that the state cannot be too complex, as the process must be able to place the agent in an arbitrary state as a starting point.
+Second, there must be known end-goals that the agent must be trying to navigate towards.
+For example, the goal at the end of the maze.
+Note that this assumption does not indicate that there is exactly one end-goal of the environment, but rather that the goals must be known.
+In this paper, a single goal state is used to simplify the process.
+If these two assumptions are met, then we can use it to apply the process presented in this paper.
+
+The method introduced in this paper attempts to cut down on the amount of initial exploring that the agent needs to do.
+When an agent has no knowledge of where the goal is, it can take a significant amount of time exploring to find it \cite{article_kickstart_deep_reinforcement_learning}.
+This is even more prominent in situations where the reward function is very binary, only giving positive rewards right at the end.
+Thus, no immedite feedback can be given to the agent until it finds the goal.
+In this new method, the agent is first shown the area immediately around the goal(s).
+The idea behind this is that the agent gets an immediate understanding of what `success' looks like.
+Then, as the agent is drawn back away from the goal, it is incentivised to find that `success' again, since it now knows that it exists.
+This paper compares this method of training against one that takes the default approach of starting the agent at the beginning of the maze.
 
 \section{Methods}
 
@@ -181,9 +216,25 @@ In this paper, the agent's range was expanded by 1 additional move away from the
 
 To inspect progress during the training, the a policy was generated from the agent after every iteration.
 The policy is created by placing the agent in every valid state within the environment, and taking the maximum output of the Q-Network's evaluation.
+This can create a policy, much like the ones displayed in Figure \ref{fig:policy}.
+
+To compare different policies, they are evaluated on how effective they are at solving the maze.
+The evaluation used in this paper measures the number of states in the maze that, when following the policy, will eventually reach the goal.
+This is done by back-tracking from the goal state using a breadth-first-search approach.
+For example, the evaluation of Figure \ref{fig:policy_350} would result in an evaluation of $0.0$, since none of the states ever lead to the goal.
+Figure \ref{fig:policy_400} changes such that the policy of the state next to the goal directs the agent into the goal.
+Since there are no states whose policy points into that tile, this policy would have an evaluation of $\frac{1}{31}$.
+In both Figure \ref{fig:policy_450} and \ref{fig:policy_500}, there are now 5 states that, when following the policy, direct the agent into the goal.
+Thus, the evaluation of the policy is $\frac{5}{31}$.
+
+This policy evaluation method is used to keep track of and analyze the progress of the agents as they train.
+If the agents are able to learn, the evaluations should generally be gradually increasing towards $1.0$, which would indicate that the policy fully solves the maze.
+
 
 
 \paragraph{Data Collection and Analysis}
+The experiment process was conducted on a machine using TensorFlow \cite{lib_tensorflow} on an NVIDIA RTX 3080 GPU with 10G of VRAM.
+Both the control agent and the experimental agent are trained and tested against the same maze over 20,000 iterations each.
 
 In order to provide insight into the convergence rates of both models, data is collected after each training iteration.
 After each training cycle, the policy generated and two sets of variables are recorded.
